@@ -29,6 +29,12 @@ public class InventoryUI : MonoBehaviour
 
 	private List<GameObject> createdSlots = new List<GameObject>();
 	private List<Image> createdSlotIcons = new List<Image>();
+	private List<GameObject> createdSlotSelection = new List<GameObject>();
+
+	// tooltip
+	private GameObject tooltipGO;
+	private Text tooltipText;
+	private int selectedIndex = -1;
 
 	private void OnEnable()
 	{
@@ -109,6 +115,30 @@ public class InventoryUI : MonoBehaviour
 				if (iconTransform != null) img = iconTransform.GetComponent<Image>();
 				if (img == null) img = goObj.GetComponentInChildren<Image>();
 				createdSlotIcons.Add(img);
+				// add outline/shadow for nicer visuals
+				var bg = goObj.GetComponent<Image>();
+				if (bg != null)
+				{
+					if (bg.GetComponent<Outline>() == null) bg.gameObject.AddComponent<Outline>().effectColor = new Color(0,0,0,0.6f);
+					if (bg.GetComponent<Shadow>() == null) bg.gameObject.AddComponent<Shadow>().effectColor = new Color(0,0,0,0.4f);
+				}
+				// create selection overlay
+				GameObject sel = new GameObject("Selection");
+				sel.transform.SetParent(goObj.transform, false);
+				var selRt = sel.AddComponent<RectTransform>();
+				selRt.anchorMin = Vector2.zero;
+				selRt.anchorMax = Vector2.one;
+				selRt.offsetMin = Vector2.zero;
+				selRt.offsetMax = Vector2.zero;
+				var selImg = sel.AddComponent<Image>();
+				selImg.color = new Color(1f, 0.9f, 0.2f, 0.18f);
+				sel.SetActive(false);
+				createdSlotSelection.Add(sel);
+				// add SlotUI to handle hover/click
+				var slotUI = goObj.GetComponent<SlotUI>();
+				if (slotUI == null) slotUI = goObj.AddComponent<SlotUI>();
+				slotUI.parentUI = this;
+				slotUI.slotIndex = i;
 				// clear
 				if (img != null)
 				{
@@ -121,6 +151,7 @@ public class InventoryUI : MonoBehaviour
 			}
 			Debug.Log($"[InventoryUI] Created fixed grid slots: {createdSlots.Count}");
 		}
+		EnsureTooltipExists();
 
 		// 将背包内的物品按顺序填充到固定格子上（若物品数超过格子数，多余物品暂不显示）
 		for (int i = 0; i < createdSlots.Count; i++)
@@ -155,6 +186,8 @@ public class InventoryUI : MonoBehaviour
 						}
 						RefreshAll();
 					});
+					// ensure selection overlay updated on click too
+					btn.onClick.AddListener(() => { SelectSlot(captureIndex); });
 				}
 			}
 			else
@@ -169,6 +202,61 @@ public class InventoryUI : MonoBehaviour
 				if (btn != null) btn.onClick.RemoveAllListeners();
 			}
 		}
+	}
+
+	private void EnsureTooltipExists()
+	{
+		if (tooltipGO != null) return;
+		Transform root = rootPanel != null ? rootPanel.transform.parent : (itemGridParent != null ? itemGridParent.root : null);
+		if (root == null) return;
+		tooltipGO = new GameObject("Tooltip");
+		tooltipGO.transform.SetParent(root, false);
+		var bg = tooltipGO.AddComponent<Image>();
+		bg.color = new Color(0f, 0f, 0f, 0.8f);
+		var rt = tooltipGO.GetComponent<RectTransform>();
+		rt.sizeDelta = new Vector2(160, 28);
+		tooltipText = new GameObject("Text").AddComponent<Text>();
+		tooltipText.transform.SetParent(tooltipGO.transform, false);
+		tooltipText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+		tooltipText.alignment = TextAnchor.MiddleCenter;
+		tooltipText.color = Color.white;
+		tooltipText.rectTransform.anchorMin = Vector2.zero;
+		tooltipText.rectTransform.anchorMax = Vector2.one;
+		tooltipText.rectTransform.offsetMin = Vector2.zero;
+		tooltipText.rectTransform.offsetMax = Vector2.zero;
+		tooltipGO.SetActive(false);
+	}
+
+	public void ShowTooltip(string text)
+	{
+		EnsureTooltipExists();
+		if (tooltipGO == null) return;
+		tooltipText.text = text;
+		tooltipGO.SetActive(true);
+		tooltipGO.GetComponent<RectTransform>().position = Input.mousePosition;
+	}
+
+	public void HideTooltip()
+	{
+		if (tooltipGO != null) tooltipGO.SetActive(false);
+	}
+
+	public void SelectSlot(int index)
+	{
+		if (selectedIndex == index)
+		{
+			// deselect
+			if (selectedIndex >= 0 && selectedIndex < createdSlotSelection.Count)
+				createdSlotSelection[selectedIndex].SetActive(false);
+			selectedIndex = -1;
+			return;
+		}
+		// clear previous
+		if (selectedIndex >= 0 && selectedIndex < createdSlotSelection.Count)
+			createdSlotSelection[selectedIndex].SetActive(false);
+		selectedIndex = index;
+		if (selectedIndex >= 0 && selectedIndex < createdSlotSelection.Count)
+			createdSlotSelection[selectedIndex].SetActive(true);
 	}
 
 	private Color GetColorForItemType(ItemType t)
