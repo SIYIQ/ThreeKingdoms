@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 public class InventoryDemoBuilder : MonoBehaviour
 {
 	public bool buildOnStart = true;
+	public bool use2D = true;
 
 	[ContextMenu("Build Demo UI")]
 	public void BuildDemoUI()
@@ -53,6 +54,21 @@ public class InventoryDemoBuilder : MonoBehaviour
 		iconRt.offsetMax = new Vector2(-6, -6);
 		var iconImage = iconGO.AddComponent<Image>();
 		iconImage.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+		// Quantity 子对象（右下角）
+		GameObject qtyGO = new GameObject("Quantity");
+		qtyGO.transform.SetParent(itemSlotPrefab.transform, false);
+		var qtyRt = qtyGO.AddComponent<RectTransform>();
+		qtyRt.anchorMin = new Vector2(1f, 0f);
+		qtyRt.anchorMax = new Vector2(1f, 0f);
+		qtyRt.pivot = new Vector2(1f, 0f);
+		qtyRt.anchoredPosition = new Vector2(-6f, 6f);
+		qtyRt.sizeDelta = new Vector2(30, 20);
+		var qtyText = qtyGO.AddComponent<Text>();
+		qtyText.text = "";
+		qtyText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+		qtyText.fontSize = 14;
+		qtyText.alignment = TextAnchor.LowerRight;
+		qtyText.color = Color.white;
 
 		// 创建 itemGridParent 并放置在 Canvas 右侧
 		GameObject gridGO = new GameObject("ItemGridParent");
@@ -67,6 +83,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 		var gridLayout = gridGO.AddComponent<UnityEngine.UI.GridLayoutGroup>();
 		gridLayout.cellSize = new Vector2(68, 68);
 		gridLayout.spacing = new Vector2(6, 6);
+		gridLayout.padding = new RectOffset(8, 8, 8, 8);
 		gridLayout.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
 		gridLayout.constraintCount = 5;
 
@@ -156,37 +173,68 @@ public class InventoryDemoBuilder : MonoBehaviour
 		var inputGO = new GameObject("InventoryInput");
 		inputGO.AddComponent<InventoryInput>();
 
-		// 创建一个简单的 3D 场景：玩家与场景内拾取物（用于按 D 向前走并触发拾取）
+		// 创建一个简单的场景：2D 或 3D（根据 use2D）
 		GameObject worldRoot = new GameObject("DemoWorld");
-		// 创建玩家（立方体）
-		GameObject player = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		player.name = "Player";
-		player.transform.SetParent(worldRoot.transform, false);
-		player.transform.position = new Vector3(-2f, 0f, 0f);
-		player.transform.localScale = Vector3.one * 0.5f;
-		player.tag = "Player";
-		var prb = player.AddComponent<Rigidbody>();
-		prb.useGravity = false;
-		// 添加 3D 玩家控制器
-		player.AddComponent<Player3DController>();
+		if (use2D)
+		{
+			// 创建 2D 玩家（Sprite）和 2D 拾取物（Sprite）
+			GameObject player2D = new GameObject("Player2D");
+			player2D.transform.SetParent(worldRoot.transform, false);
+			player2D.transform.position = new Vector3(-2f, 0f, 0f);
+			var spr = player2D.AddComponent<SpriteRenderer>();
+			spr.sprite = CreateColoredSprite(48, 48, new Color(0.2f, 0.6f, 1f));
+			player2D.transform.localScale = Vector3.one * 0.5f;
+			player2D.tag = "Player";
+			var rb2d = player2D.AddComponent<Rigidbody2D>();
+			rb2d.bodyType = RigidbodyType2D.Kinematic;
+			var col2d = player2D.AddComponent<BoxCollider2D>();
+			col2d.isTrigger = false;
+			player2D.AddComponent<PlayerController>();
 
-		// 创建场景中的拾取物（小红瓶），使用 3D cube 表示并附 PickupItem
-		GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
-		pickup.name = "Pickup_Potion";
-		pickup.transform.SetParent(worldRoot.transform, false);
-		pickup.transform.position = new Vector3(0f, 0f, 0f);
-		pickup.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
-		var prend = pickup.GetComponent<Renderer>();
-		if (prend != null) prend.material.color = Color.red;
-		// 将 collider 设置为 trigger 并添加 PickupItem 脚本
-		var pc = pickup.GetComponent<Collider>();
-		if (pc != null) pc.isTrigger = true;
-		var pickupScript = pickup.AddComponent<PickupItem>();
-		pickupScript.id = "i_potion_world";
-		pickupScript.itemName = "小红瓶(场景)";
-		pickupScript.itemType = ItemType.Consumable;
-		pickupScript.mp = 30;
-		pickupScript.hp = 0;
+			GameObject pickup2D = new GameObject("Pickup_Potion2D");
+			pickup2D.transform.SetParent(worldRoot.transform, false);
+			pickup2D.transform.position = new Vector3(0f, 0f, 0f);
+			var pspr = pickup2D.AddComponent<SpriteRenderer>();
+			pspr.sprite = CreateColoredSprite(32, 32, Color.red);
+			pickup2D.transform.localScale = Vector3.one * 0.5f;
+			var pcol = pickup2D.AddComponent<BoxCollider2D>();
+			pcol.isTrigger = true;
+			var pickupScript2 = pickup2D.AddComponent<PickupItem>();
+			pickupScript2.id = "i_potion_world";
+			pickupScript2.itemName = "小红瓶(场景)";
+			pickupScript2.itemType = ItemType.Consumable;
+			pickupScript2.mp = 30;
+			pickupScript2.hp = 0;
+		}
+		else
+		{
+			// 3D fallback (cube)
+			GameObject player = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			player.name = "Player";
+			player.transform.SetParent(worldRoot.transform, false);
+			player.transform.position = new Vector3(-2f, 0f, 0f);
+			player.transform.localScale = Vector3.one * 0.5f;
+			player.tag = "Player";
+			var prb = player.AddComponent<Rigidbody>();
+			prb.useGravity = false;
+			player.AddComponent<Player3DController>();
+
+			GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
+			pickup.name = "Pickup_Potion";
+			pickup.transform.SetParent(worldRoot.transform, false);
+			pickup.transform.position = new Vector3(0f, 0f, 0f);
+			pickup.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+			var prend = pickup.GetComponent<Renderer>();
+			if (prend != null) prend.material.color = Color.red;
+			var pc = pickup.GetComponent<Collider>();
+			if (pc != null) pc.isTrigger = true;
+			var pickupScript = pickup.AddComponent<PickupItem>();
+			pickupScript.id = "i_potion_world";
+			pickupScript.itemName = "小红瓶(场景)";
+			pickupScript.itemType = ItemType.Consumable;
+			pickupScript.mp = 30;
+			pickupScript.hp = 0;
+		}
 
 		// 额外调试信息，输出 items 与生成格子数（如果有）
 		int itemCount = InventoryManager.Instance != null ? InventoryManager.Instance.items.Count : 0;
@@ -256,6 +304,16 @@ public class InventoryDemoBuilder : MonoBehaviour
 			bool added = InventoryManager.Instance?.AddItem(item) ?? false;
 			Debug.Log($"[Pickup] {label} picked, added={added}");
 		});
+	}
+
+	private Sprite CreateColoredSprite(int w, int h, Color c)
+	{
+		Texture2D tex = new Texture2D(w, h);
+		Color[] cols = new Color[w * h];
+		for (int i = 0; i < cols.Length; i++) cols[i] = c;
+		tex.SetPixels(cols);
+		tex.Apply();
+		return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
 	}
 
 	private void Start()
