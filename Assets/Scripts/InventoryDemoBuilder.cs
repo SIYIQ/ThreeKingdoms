@@ -345,7 +345,9 @@ public class InventoryDemoBuilder : MonoBehaviour
 			if (demoClothSprite != null) ts.sampleClothIcon = demoClothSprite;
 			if (demoItemSprite != null) ts.sampleItemIcon = demoItemSprite;
 			if (demoCharacterSprite != null) charImg.sprite = demoCharacterSprite;
-			Debug.Log("[InventoryDemoBuilder] Injected demo sprites into TestInventorySetup (if fields set).");
+			// 注入后立即调用它的初始化方法，确保 TestInventorySetup 使用最新注入的 sprites
+			ts.SetupIconsAndItems();
+			Debug.Log("[InventoryDemoBuilder] Injected demo sprites into TestInventorySetup and invoked SetupIconsAndItems.");
 		}
 
 		// 创建一个简单的场景：2D 或 3D（根据 use2D）

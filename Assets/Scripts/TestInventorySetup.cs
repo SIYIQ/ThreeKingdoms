@@ -13,6 +13,27 @@ public class TestInventorySetup : MonoBehaviour
 		if (mgr == null) return;
 
 		Debug.Log("[TestInventorySetup] Start - populating sample items");
+		// 执行初始化（包括加载图标并填充示例物品）
+		SetupIconsAndItems();
+
+		// 设置基础属性（可在 Inspector 调整）
+		mgr.baseHP = 311;
+		mgr.baseMP = 314;
+		mgr.baseAttack = 79;
+		// 示例经验与当前经验
+		mgr.maxEXP = 675;
+		mgr.currentEXP = 338;
+		// 初始化当前血蓝（演示）
+		mgr.currentHP = mgr.GetTotalHP();
+		mgr.currentMP = mgr.GetTotalMP();
+
+		// 触发 UI 刷新（事件会在 AddItem 内触发）
+	}
+	// 将图标加载与示例物品填充提取成可被外部触发的方法
+	public void SetupIconsAndItems()
+	{
+		var mgr = InventoryManager.Instance;
+		if (mgr == null) return;
 		// 清空并添加示例物品
 		mgr.items.Clear();
 		// 尝试从 Resources 或 Assets/Textures 加载示例图标（编辑器模式下使用 AssetDatabase 作为后备）
@@ -31,19 +52,6 @@ public class TestInventorySetup : MonoBehaviour
 		Debug.Log("[TestInventorySetup] Added sample consumable 小红瓶");
 		mgr.AddItem(new Item("i_misc_01", "奇怪的石头", ItemType.Misc) { icon = sItem });
 		Debug.Log("[TestInventorySetup] Added sample misc 奇怪的石头");
-
-		// 设置基础属性（可在 Inspector 调整）
-		mgr.baseHP = 311;
-		mgr.baseMP = 314;
-		mgr.baseAttack = 79;
-		// 示例经验与当前经验
-		mgr.maxEXP = 675;
-		mgr.currentEXP = 338;
-		// 初始化当前血蓝（演示）
-		mgr.currentHP = mgr.GetTotalHP();
-		mgr.currentMP = mgr.GetTotalMP();
-
-		// 触发 UI 刷新（事件会在 AddItem 内触发）
 	}
 
 	private Sprite LoadSpriteByName(string name)
