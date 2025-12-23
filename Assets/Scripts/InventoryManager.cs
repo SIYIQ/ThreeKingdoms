@@ -20,6 +20,9 @@ public class InventoryManager : MonoBehaviour
 	public int baseHP = 100;
 	public int baseMP = 30;
 	public int baseAttack = 10;
+	// 实时属性（用于演示使用道具时的当前血蓝值）
+	public int currentHP;
+	public int currentMP;
 
 	// 事件：背包或装备变化，UI 可订阅刷新
 	public event Action OnInventoryChanged;
@@ -35,6 +38,13 @@ public class InventoryManager : MonoBehaviour
 		Instance = this;
 		Debug.Log("[InventoryManager] Awake - Instance set");
 		// 不 DestroyOnLoad 以便编辑测试时可见，根据需要修改
+	}
+	private void Start()
+	{
+		// 初始化当前血蓝为总量
+		currentHP = GetTotalHP();
+		currentMP = GetTotalMP();
+		OnStatsChanged?.Invoke();
 	}
 
 	#region 背包操作
@@ -60,6 +70,48 @@ public class InventoryManager : MonoBehaviour
 			Debug.LogWarning($"[InventoryManager] RemoveItem FAILED: {item?.itemName} not found");
 		}
 		return removed;
+	}
+	#endregion
+
+	#region 使用道具
+	// 使用一个道具（只处理 Consumable 类型）
+	public bool UseItem(Item item)
+	{
+		if (item == null) return false;
+		if (item.itemType != ItemType.Consumable)
+		{
+			Debug.LogWarning($"[InventoryManager] UseItem: {item.itemName} is not consumable");
+			return false;
+		}
+		// 增加当前属性并限制到最大值
+		currentHP = Mathf.Min(GetTotalHP(), currentHP + item.hpBonus);
+		currentMP = Mathf.Min(GetTotalMP(), currentMP + item.mpBonus);
+		bool removed = RemoveItem(item);
+		if (removed)
+		{
+			Debug.Log($"[InventoryManager] UseItem: {item.itemName} used. HP={currentHP}/{GetTotalHP()} MP={currentMP}/{GetTotalMP()}");
+			OnStatsChanged?.Invoke();
+			return true;
+		}
+		else
+		{
+			Debug.LogWarning($"[InventoryManager] UseItem failed to remove {item.itemName}");
+			return false;
+		}
+	}
+
+	// 查找背包中第一个可用的消耗品并使用
+	public bool UseFirstConsumable()
+	{
+		for (int i = 0; i < items.Count; i++)
+		{
+			if (items[i] != null && items[i].itemType == ItemType.Consumable)
+			{
+				return UseItem(items[i]);
+			}
+		}
+		Debug.Log("[InventoryManager] UseFirstConsumable: none found");
+		return false;
 	}
 	#endregion
 

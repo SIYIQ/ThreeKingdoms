@@ -107,8 +107,38 @@ public class InventoryDemoBuilder : MonoBehaviour
 		inventoryUI.weaponSlotImage = weaponSlot.GetComponent<Image>();
 		inventoryUI.clothingSlotImage = clothSlot.GetComponent<Image>();
 		inventoryUI.extraEquipSlotImages = new Image[2] { extra0.GetComponent<Image>(), extra1.GetComponent<Image>() };
+		// 创建一个根面板，将装备/属性/背包网格放到该面板之下（用于打开/关闭）
+		GameObject rootPanel = new GameObject("InventoryRootPanel");
+		rootPanel.transform.SetParent(canvasGO.transform, false);
+		var rootRt = rootPanel.AddComponent<RectTransform>();
+		rootRt.anchorMin = new Vector2(0.03f, 0.05f);
+		rootRt.anchorMax = new Vector2(0.97f, 0.95f);
+		rootRt.offsetMin = Vector2.zero;
+		rootRt.offsetMax = Vector2.zero;
+		var rootImg = rootPanel.AddComponent<Image>();
+		rootImg.color = new Color(0f, 0f, 0f, 0.6f);
+
+		// 将已有 UI 元素移到 rootPanel 下
+		gridGO.transform.SetParent(rootPanel.transform, false);
+		statsGO.transform.SetParent(rootPanel.transform, false);
+		equipGO.transform.SetParent(rootPanel.transform, false);
+		uiGO.transform.SetParent(rootPanel.transform, false);
+
+		// 把 inventoryUI 的 rootPanel 字段指向该面板，并初始关闭（按 I 打开）
+		inventoryUI.rootPanel = rootPanel;
+		rootPanel.SetActive(false);
+
 		// 手动触发一次刷新（因为 InventoryUI 可能在被添加时还没收到字段引用）
 		inventoryUI.RefreshAll();
+
+		// 创建几个场景中的“拾取物”，用按钮点击拾取（便于演示）
+		CreatePickupButton(canvasGO.transform, new Vector2(0.15f, 0.2f), "拾取: 小红瓶", "i_potion_01", ItemType.Consumable, 0, 50, 0);
+		CreatePickupButton(canvasGO.transform, new Vector2(0.3f, 0.2f), "拾取: 短剑", "i_sword_02", ItemType.Weapon, 0, 0, 20);
+		CreatePickupButton(canvasGO.transform, new Vector2(0.45f, 0.2f), "拾取: 布衣", "i_cloth_02", ItemType.Clothing, 10, 5, 0);
+
+		// 添加 Input 控制器（处理打开背包和快捷键）
+		var inputGO = new GameObject("InventoryInput");
+		inputGO.AddComponent<InventoryInput>();
 
 		// 额外调试信息，输出 items 与生成格子数（如果有）
 		int itemCount = InventoryManager.Instance != null ? InventoryManager.Instance.items.Count : 0;
@@ -117,7 +147,6 @@ public class InventoryDemoBuilder : MonoBehaviour
 		{
 			Debug.Log($"[InventoryDemoBuilder] ItemGridParent childCount = {inventoryUI.itemGridParent.childCount}");
 		}
-
 		Debug.Log("[InventoryDemoBuilder] Demo UI built. Play the scene and check Console for Inventory logs.");
 	}
 
@@ -155,6 +184,30 @@ public class InventoryDemoBuilder : MonoBehaviour
 		var img = go.AddComponent<Image>();
 		img.color = new Color(0.2f, 0.2f, 0.2f, 1f);
 		return go;
+	}
+
+	private void CreatePickupButton(Transform parent, Vector2 anchor, string label, string id, ItemType type, int hp, int mp, int atk)
+	{
+		GameObject go = new GameObject("Pickup_" + id);
+		go.transform.SetParent(parent, false);
+		var rt = go.AddComponent<RectTransform>();
+		rt.anchorMin = anchor;
+		rt.anchorMax = anchor;
+		rt.sizeDelta = new Vector2(120, 40);
+		var img = go.AddComponent<Image>();
+		img.color = new Color(0.8f, 0.4f, 0.1f, 1f);
+
+		var btn = go.AddComponent<UnityEngine.UI.Button>();
+		// 文本
+		GameObject txt = CreateTextChild(go.transform, label, new Vector2(0.5f, 0.5f));
+		txt.GetComponent<UnityEngine.UI.Text>().fontSize = 14;
+
+		btn.onClick.AddListener(() =>
+		{
+			var item = new Item(id, label, type, hp, mp, atk);
+			bool added = InventoryManager.Instance?.AddItem(item) ?? false;
+			Debug.Log($"[Pickup] {label} picked, added={added}");
+		});
 	}
 
 	private void Start()

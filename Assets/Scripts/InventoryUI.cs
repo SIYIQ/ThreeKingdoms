@@ -16,6 +16,8 @@ public class InventoryUI : MonoBehaviour
 	[Header("背包网格")]
 	public Transform itemGridParent;
 	public GameObject itemSlotPrefab; // 需要一个包含 Image + Button 的预制件
+	[Header("根面板（用于打开/关闭背包）")]
+	public GameObject rootPanel;
 
 	[Header("属性文本")]
 	public Text hpText;
@@ -134,8 +136,8 @@ public class InventoryUI : MonoBehaviour
 	{
 		var mgr = InventoryManager.Instance;
 		if (mgr == null) return;
-		if (hpText != null) hpText.text = $"HP: {mgr.GetTotalHP()}";
-		if (mpText != null) mpText.text = $"MP: {mgr.GetTotalMP()}";
+		if (hpText != null) hpText.text = $"HP: {mgr.currentHP}/{mgr.GetTotalHP()}";
+		if (mpText != null) mpText.text = $"MP: {mgr.currentMP}/{mgr.GetTotalMP()}";
 		if (attackText != null) attackText.text = $"ATK: {mgr.GetTotalAttack()}";
 	}
 }
