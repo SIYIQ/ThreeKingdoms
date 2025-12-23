@@ -116,7 +116,8 @@ public class InventoryDemoBuilder : MonoBehaviour
 		rootRt.offsetMin = Vector2.zero;
 		rootRt.offsetMax = Vector2.zero;
 		var rootImg = rootPanel.AddComponent<Image>();
-		rootImg.color = new Color(0f, 0f, 0f, 0.6f);
+		// 更明显的底色，避免看起来太透明
+		rootImg.color = new Color(0f, 0f, 0f, 0.95f);
 
 		// 将已有 UI 元素移到 rootPanel 下
 		gridGO.transform.SetParent(rootPanel.transform, false);
@@ -139,6 +140,38 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 添加 Input 控制器（处理打开背包和快捷键）
 		var inputGO = new GameObject("InventoryInput");
 		inputGO.AddComponent<InventoryInput>();
+
+		// 创建一个简单的 3D 场景：玩家与场景内拾取物（用于按 D 向前走并触发拾取）
+		GameObject worldRoot = new GameObject("DemoWorld");
+		// 创建玩家（立方体）
+		GameObject player = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		player.name = "Player";
+		player.transform.SetParent(worldRoot.transform, false);
+		player.transform.position = new Vector3(-2f, 0f, 0f);
+		player.transform.localScale = Vector3.one * 0.5f;
+		player.tag = "Player";
+		var prb = player.AddComponent<Rigidbody>();
+		prb.useGravity = false;
+		// 添加 3D 玩家控制器
+		player.AddComponent<Player3DController>();
+
+		// 创建场景中的拾取物（小红瓶），使用 3D cube 表示并附 PickupItem
+		GameObject pickup = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		pickup.name = "Pickup_Potion";
+		pickup.transform.SetParent(worldRoot.transform, false);
+		pickup.transform.position = new Vector3(0f, 0f, 0f);
+		pickup.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+		var prend = pickup.GetComponent<Renderer>();
+		if (prend != null) prend.material.color = Color.red;
+		// 将 collider 设置为 trigger 并添加 PickupItem 脚本
+		var pc = pickup.GetComponent<Collider>();
+		if (pc != null) pc.isTrigger = true;
+		var pickupScript = pickup.AddComponent<PickupItem>();
+		pickupScript.id = "i_potion_world";
+		pickupScript.itemName = "小红瓶(场景)";
+		pickupScript.itemType = ItemType.Consumable;
+		pickupScript.mp = 30;
+		pickupScript.hp = 0;
 
 		// 额外调试信息，输出 items 与生成格子数（如果有）
 		int itemCount = InventoryManager.Instance != null ? InventoryManager.Instance.items.Count : 0;
