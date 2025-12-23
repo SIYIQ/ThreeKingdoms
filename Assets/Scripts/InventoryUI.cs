@@ -16,6 +16,9 @@ public class InventoryUI : MonoBehaviour
 	[Header("背包网格")]
 	public Transform itemGridParent;
 	public GameObject itemSlotPrefab; // 需要一个包含 Image + Button 的预制件
+	[Header("Grid 设置")]
+	public int gridColumns = 5;
+	public int gridRows = 4;
 	[Header("根面板（用于打开/关闭背包）")]
 	public GameObject rootPanel;
 
@@ -25,6 +28,7 @@ public class InventoryUI : MonoBehaviour
 	public Text attackText;
 
 	private List<GameObject> createdSlots = new List<GameObject>();
+	private List<Image> createdSlotIcons = new List<Image>();
 
 	private void OnEnable()
 	{
@@ -89,46 +93,92 @@ public class InventoryUI : MonoBehaviour
 		if (mgr == null || itemSlotPrefab == null || itemGridParent == null) return;
 
 		Debug.Log($"[InventoryUI] RefreshInventoryGrid - items count {mgr.items.Count}");
-		// 清理旧槽
-		foreach (var go in createdSlots) Destroy(go);
-		createdSlots.Clear();
-
-		// 为每个背包物品创建一个槽（简单实现）
-		int idx = 0;
-		for (int i = 0; i < mgr.items.Count; i++)
+		// 如果还没创建固定槽，先创建 gridColumns * gridRows 个槽
+		int totalSlots = Mathf.Max(1, gridColumns) * Mathf.Max(1, gridRows);
+		if (createdSlots.Count == 0)
 		{
-			var item = mgr.items[i];
-			var goObj = Instantiate(itemSlotPrefab, itemGridParent, false);
-			if (goObj == null) continue;
-			goObj.name = $"ItemSlot_{i}";
-			goObj.SetActive(true);
-			createdSlots.Add(goObj);
-
-			// 优先寻找名为 "Icon" 的子对象
-			Image img = null;
-			var iconTransform = goObj.transform.Find("Icon");
-			if (iconTransform != null) img = iconTransform.GetComponent<Image>();
-			if (img == null) img = goObj.GetComponentInChildren<Image>();
-
-			if (img != null)
+			for (int i = 0; i < totalSlots; i++)
 			{
-				img.sprite = item.icon;
-				img.color = item.icon == null ? new Color(1, 1, 1, 0.5f) : Color.white;
+				var goObj = Instantiate(itemSlotPrefab, itemGridParent, false);
+				if (goObj == null) continue;
+				goObj.name = $"ItemSlot_{i}";
+				createdSlots.Add(goObj);
+				// find icon image
+				Image img = null;
+				var iconTransform = goObj.transform.Find("Icon");
+				if (iconTransform != null) img = iconTransform.GetComponent<Image>();
+				if (img == null) img = goObj.GetComponentInChildren<Image>();
+				createdSlotIcons.Add(img);
+				// clear
+				if (img != null)
+				{
+					img.sprite = null;
+					img.color = new Color(1,1,1,0.2f);
+				}
+				// clear button listeners
+				var btn = goObj.GetComponentInChildren<Button>();
+				if (btn != null) btn.onClick.RemoveAllListeners();
 			}
+			Debug.Log($"[InventoryUI] Created fixed grid slots: {createdSlots.Count}");
+		}
 
-			// 点击时装备该道具（简单交互）
-			var btn = goObj.GetComponentInChildren<Button>();
-			if (btn != null)
+		// 将背包内的物品按顺序填充到固定格子上（若物品数超过格子数，多余物品暂不显示）
+		for (int i = 0; i < createdSlots.Count; i++)
+		{
+			Image iconImage = (i < createdSlotIcons.Count) ? createdSlotIcons[i] : null;
+			if (i < mgr.items.Count && mgr.items[i] != null)
 			{
-				int captureIndex = i;
-				btn.onClick.AddListener(() => {
-					Debug.Log($"[InventoryUI] item slot clicked: {mgr.items[Mathf.Clamp(captureIndex,0,mgr.items.Count-1)]?.itemName}");
-					InventoryManager.Instance.EquipItem(item);
-					RefreshAll();
-				});
+				var item = mgr.items[i];
+				if (iconImage != null)
+				{
+					iconImage.sprite = item.icon;
+					// 使用物品类型映射颜色填充背景效果（若没有 sprite，则用颜色块）
+					iconImage.color = item.icon == null ? GetColorForItemType(item.itemType) : Color.white;
+					// 额外：如果你希望用纯色覆盖背景，可设置父对象的 Image.color
+				}
+				// 点击格子装备或使用（示例：装备/使用）
+				var btn = createdSlots[i].GetComponentInChildren<Button>();
+				if (btn != null)
+				{
+					int captureIndex = i;
+					btn.onClick.RemoveAllListeners();
+					btn.onClick.AddListener(() =>
+					{
+						var it = InventoryManager.Instance.items[Mathf.Clamp(captureIndex, 0, InventoryManager.Instance.items.Count-1)];
+						if (it.itemType == ItemType.Consumable)
+						{
+							InventoryManager.Instance.UseItem(it);
+						}
+						else
+						{
+							InventoryManager.Instance.EquipItem(it);
+						}
+						RefreshAll();
+					});
+				}
 			}
-			idx++;
-			Debug.Log($"[InventoryUI] Created slot {goObj.name} for item {(item==null? "null": item.itemName)}");
+			else
+			{
+				// 空槽
+				if (iconImage != null)
+				{
+					iconImage.sprite = null;
+					iconImage.color = new Color(1,1,1,0.2f);
+				}
+				var btn = createdSlots[i].GetComponentInChildren<Button>();
+				if (btn != null) btn.onClick.RemoveAllListeners();
+			}
+		}
+	}
+
+	private Color GetColorForItemType(ItemType t)
+	{
+		switch (t)
+		{
+			case ItemType.Weapon: return new Color(1f, 0.6f, 0.2f, 1f); // 橙
+			case ItemType.Clothing: return new Color(0.4f, 0.9f, 0.4f, 1f); // 绿
+			case ItemType.Consumable: return new Color(0.4f, 0.6f, 1f, 1f); // 蓝
+			case ItemType.Misc: default: return new Color(0.8f, 0.8f, 0.8f, 1f); // 灰
 		}
 	}
 

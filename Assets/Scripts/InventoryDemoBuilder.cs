@@ -62,6 +62,8 @@ public class InventoryDemoBuilder : MonoBehaviour
 		gridRt.anchorMax = new Vector2(0.95f, 0.9f);
 		gridRt.offsetMin = Vector2.zero;
 		gridRt.offsetMax = Vector2.zero;
+		var gridBg = gridGO.AddComponent<Image>();
+		gridBg.color = new Color(0.95f, 0.95f, 0.9f, 0.6f); // 淡色背景
 		var gridLayout = gridGO.AddComponent<UnityEngine.UI.GridLayoutGroup>();
 		gridLayout.cellSize = new Vector2(68, 68);
 		gridLayout.spacing = new Vector2(6, 6);
@@ -82,6 +84,17 @@ public class InventoryDemoBuilder : MonoBehaviour
 		GameObject atkTextGO = CreateTextChild(statsGO.transform, "ATK: 0", new Vector2(0.5f, 0.2f));
 
 		// 创建简单装备槽（左上）
+		// 大头像（左上）
+		GameObject charGO = new GameObject("CharacterImage");
+		charGO.transform.SetParent(canvasGO.transform, false);
+		var charRt = charGO.AddComponent<RectTransform>();
+		charRt.anchorMin = new Vector2(0.05f, 0.55f);
+		charRt.anchorMax = new Vector2(0.35f, 0.95f);
+		charRt.offsetMin = Vector2.zero;
+		charRt.offsetMax = Vector2.zero;
+		var charImg = charGO.AddComponent<Image>();
+		charImg.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
 		GameObject equipGO = new GameObject("EquipSlots");
 		equipGO.transform.SetParent(canvasGO.transform, false);
 		var equipRt = equipGO.AddComponent<RectTransform>();
@@ -101,6 +114,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 		var inventoryUI = uiGO.AddComponent<InventoryUI>();
 		inventoryUI.itemGridParent = gridGO.transform;
 		inventoryUI.itemSlotPrefab = itemSlotPrefab;
+		inventoryUI.characterImage = charImg;
 		inventoryUI.hpText = hpTextGO.GetComponent<Text>();
 		inventoryUI.mpText = mpTextGO.GetComponent<Text>();
 		inventoryUI.attackText = atkTextGO.GetComponent<Text>();
@@ -124,6 +138,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 		statsGO.transform.SetParent(rootPanel.transform, false);
 		equipGO.transform.SetParent(rootPanel.transform, false);
 		uiGO.transform.SetParent(rootPanel.transform, false);
+		charGO.transform.SetParent(rootPanel.transform, false);
 
 		// 把 inventoryUI 的 rootPanel 字段指向该面板，并初始关闭（按 I 打开）
 		inventoryUI.rootPanel = rootPanel;
