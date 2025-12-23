@@ -186,14 +186,22 @@ public class InventoryUI : MonoBehaviour
 							Debug.LogWarning("[InventoryUI] clicked slot but item is null");
 							return;
 						}
-						if (capturedItem.itemType == ItemType.Consumable)
+						// Equip to the correct left slot by type using explicit API
+						bool result = false;
+						switch (capturedItem.itemType)
 						{
-							InventoryManager.Instance.UseItem(capturedItem);
+							case ItemType.Weapon:
+								result = InventoryManager.Instance?.EquipToWeapon(capturedItem) ?? false;
+								break;
+							case ItemType.Clothing:
+								result = InventoryManager.Instance?.EquipToClothing(capturedItem) ?? false;
+								break;
+							case ItemType.Consumable:
+							case ItemType.Misc:
+								result = InventoryManager.Instance?.EquipToExtra(capturedItem) ?? false;
+								break;
 						}
-						else
-						{
-							InventoryManager.Instance.EquipItem(capturedItem);
-						}
+						Debug.Log($"[InventoryUI] Equip attempt for {capturedItem.itemName} result={result}");
 						RefreshAll();
 					});
 					// ensure selection overlay updated on click too

@@ -76,6 +76,68 @@ public class InventoryManager : MonoBehaviour
 	}
 	#endregion
 
+	#region 直接装备到特定槽（供 UI 调用的更明确接口）
+	public bool EquipToWeapon(Item item)
+	{
+		if (item == null || item.itemType != ItemType.Weapon) return false;
+		weaponSlot = item;
+		RemoveItem(item);
+		OnInventoryChanged?.Invoke();
+		OnStatsChanged?.Invoke();
+		Debug.Log($"[InventoryManager] EquipToWeapon: {item.itemName}");
+		return true;
+	}
+
+	public bool EquipToClothing(Item item)
+	{
+		if (item == null || item.itemType != ItemType.Clothing) return false;
+		clothingSlot = item;
+		RemoveItem(item);
+		OnInventoryChanged?.Invoke();
+		OnStatsChanged?.Invoke();
+		Debug.Log($"[InventoryManager] EquipToClothing: {item.itemName}");
+		return true;
+	}
+
+	public bool EquipToExtra(Item item)
+	{
+		if (item == null) return false;
+		// 放到额外槽第一个空位
+		for (int i = 0; i < extraEquipSlots.Length; i++)
+		{
+			if (extraEquipSlots[i] == null)
+			{
+				extraEquipSlots[i] = item;
+				RemoveItem(item);
+				OnInventoryChanged?.Invoke();
+				OnStatsChanged?.Invoke();
+				Debug.Log($"[InventoryManager] EquipToExtra[{i}]: {item.itemName}");
+				return true;
+			}
+		}
+		// 若满则替换第0位
+		extraEquipSlots[0] = item;
+		RemoveItem(item);
+		OnInventoryChanged?.Invoke();
+		OnStatsChanged?.Invoke();
+		Debug.Log($"[InventoryManager] EquipToExtra[0] replace: {item.itemName}");
+		return true;
+	}
+
+	public bool UnequipExtraSlot(int index)
+	{
+		if (index < 0 || index >= extraEquipSlots.Length) return false;
+		if (extraEquipSlots[index] == null) return false;
+		bool added = AddItem(extraEquipSlots[index]);
+		if (!added) return false;
+		Debug.Log($"[InventoryManager] UnequipExtraSlot[{index}]: {extraEquipSlots[index].itemName}");
+		extraEquipSlots[index] = null;
+		OnInventoryChanged?.Invoke();
+		OnStatsChanged?.Invoke();
+		return true;
+	}
+	#endregion
+
 	#region 使用道具
 	// 使用一个道具（只处理 Consumable 类型）
 	public bool UseItem(Item item)

@@ -222,8 +222,18 @@ public class InventoryDemoBuilder : MonoBehaviour
 			srt.sizeDelta = new Vector2(56, 56);
 			var simg = s.AddComponent<Image>();
 			simg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+			// add button so user can click to unequip
+			var sbtn = s.AddComponent<UnityEngine.UI.Button>();
 			eqSlots[i] = s;
 			eqImgs[i] = simg;
+			// add listener: unequip corresponding slot when clicked
+			int capture = i;
+			sbtn.onClick.AddListener(() =>
+			{
+				if (capture == 0) InventoryManager.Instance?.UnequipWeapon();
+				else if (capture == 1) InventoryManager.Instance?.UnequipClothing();
+				else InventoryManager.Instance?.UnequipExtraSlot(capture - 2);
+			});
 		}
 		// bind to inventoryUI: weapon, clothing, extra0, extra1
 		inventoryUI.weaponSlotImage = eqImgs[0];
