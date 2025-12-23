@@ -88,12 +88,22 @@ public class InventoryUI : MonoBehaviour
 		if (item == null)
 		{
 			img.sprite = null;
+			img.sprite = null;
 			img.color = new Color(1,1,1,0); // 隐藏
 		}
 		else
 		{
-			img.sprite = item.icon;
-			img.color = Color.white;
+			if (item.icon != null)
+			{
+				img.sprite = item.icon;
+				img.color = Color.white;
+			}
+			else
+			{
+				// 没有图标时用类型颜色填充
+				img.sprite = null;
+				img.color = GetColorForItemType(item.itemType);
+			}
 		}
 	}
 
@@ -231,6 +241,10 @@ public class InventoryUI : MonoBehaviour
 		tooltipGO.transform.SetParent(root, false);
 		var bg = tooltipGO.AddComponent<Image>();
 		bg.color = new Color(0f, 0f, 0f, 0.8f);
+		// not block raycasts so it doesn't interfere with pointer events
+		bg.raycastTarget = false;
+		var cg = tooltipGO.AddComponent<CanvasGroup>();
+		cg.blocksRaycasts = false;
 		var rt = tooltipGO.GetComponent<RectTransform>();
 		rt.sizeDelta = new Vector2(160, 28);
 		tooltipText = new GameObject("Text").AddComponent<Text>();
@@ -242,6 +256,7 @@ public class InventoryUI : MonoBehaviour
 		tooltipText.rectTransform.anchorMax = Vector2.one;
 		tooltipText.rectTransform.offsetMin = Vector2.zero;
 		tooltipText.rectTransform.offsetMax = Vector2.zero;
+		tooltipText.raycastTarget = false;
 		tooltipGO.SetActive(false);
 	}
 
@@ -251,7 +266,9 @@ public class InventoryUI : MonoBehaviour
 		if (tooltipGO == null) return;
 		tooltipText.text = text;
 		tooltipGO.SetActive(true);
-		tooltipGO.GetComponent<RectTransform>().position = Input.mousePosition;
+		// offset so the tooltip doesn't occlude pointer and cause OnPointerExit
+		var pos = Input.mousePosition + new Vector3(16f, -16f, 0f);
+		tooltipGO.GetComponent<RectTransform>().position = pos;
 	}
 
 	public void HideTooltip()

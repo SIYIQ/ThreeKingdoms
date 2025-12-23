@@ -53,11 +53,20 @@ public class TestInventorySetup : MonoBehaviour
 #if UNITY_EDITOR
 		if (s == null)
 		{
-			// 编辑器下尝试直接从 Assets/Textures 加载
+			// 编辑器下尝试直接从 Assets/Textures 加载为 Sprite 或 Texture2D 并创建 Sprite
 			var path = $"Assets/Textures/{name}.png";
-			s = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+			var spr = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
+			if (spr != null) return spr;
+			var tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+			if (tex != null)
+			{
+				// create sprite from texture
+				var newSpr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+				return newSpr;
+			}
 		}
 #endif
+		// 如果 Resources.Load 没找到并且编辑器回退也没成功，返回 null
 		return s;
 	}
 }
