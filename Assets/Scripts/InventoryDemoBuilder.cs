@@ -107,6 +107,8 @@ public class InventoryDemoBuilder : MonoBehaviour
 		inventoryUI.weaponSlotImage = weaponSlot.GetComponent<Image>();
 		inventoryUI.clothingSlotImage = clothSlot.GetComponent<Image>();
 		inventoryUI.extraEquipSlotImages = new Image[2] { extra0.GetComponent<Image>(), extra1.GetComponent<Image>() };
+		// 手动触发一次刷新（因为 InventoryUI 可能在被添加时还没收到字段引用）
+		inventoryUI.RefreshAll();
 
 		Debug.Log("[InventoryDemoBuilder] Demo UI built. Play the scene and check Console for Inventory logs.");
 	}
