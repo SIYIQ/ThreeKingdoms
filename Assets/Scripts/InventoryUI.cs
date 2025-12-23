@@ -92,26 +92,41 @@ public class InventoryUI : MonoBehaviour
 		createdSlots.Clear();
 
 		// 为每个背包物品创建一个槽（简单实现）
-		foreach (var item in mgr.items)
+		int idx = 0;
+		for (int i = 0; i < mgr.items.Count; i++)
 		{
-			var go = Instantiate(itemSlotPrefab, itemGridParent, false);
-			createdSlots.Add(go);
-			var img = go.GetComponentInChildren<Image>();
+			var item = mgr.items[i];
+			var goObj = Instantiate(itemSlotPrefab, itemGridParent, false);
+			if (goObj == null) continue;
+			goObj.name = $"ItemSlot_{i}";
+			goObj.SetActive(true);
+			createdSlots.Add(goObj);
+
+			// 优先寻找名为 "Icon" 的子对象
+			Image img = null;
+			var iconTransform = goObj.transform.Find("Icon");
+			if (iconTransform != null) img = iconTransform.GetComponent<Image>();
+			if (img == null) img = goObj.GetComponentInChildren<Image>();
+
 			if (img != null)
 			{
 				img.sprite = item.icon;
-				img.color = item.icon == null ? new Color(1,1,1,0.5f) : Color.white;
+				img.color = item.icon == null ? new Color(1, 1, 1, 0.5f) : Color.white;
 			}
+
 			// 点击时装备该道具（简单交互）
-			var btn = go.GetComponentInChildren<Button>();
+			var btn = goObj.GetComponentInChildren<Button>();
 			if (btn != null)
 			{
+				int captureIndex = i;
 				btn.onClick.AddListener(() => {
-					Debug.Log($"[InventoryUI] item slot clicked: {item?.itemName}");
+					Debug.Log($"[InventoryUI] item slot clicked: {mgr.items[Mathf.Clamp(captureIndex,0,mgr.items.Count-1)]?.itemName}");
 					InventoryManager.Instance.EquipItem(item);
 					RefreshAll();
 				});
 			}
+			idx++;
+			Debug.Log($"[InventoryUI] Created slot {goObj.name} for item {(item==null? "null": item.itemName)}");
 		}
 	}
 

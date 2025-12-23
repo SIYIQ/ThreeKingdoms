@@ -110,6 +110,14 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 手动触发一次刷新（因为 InventoryUI 可能在被添加时还没收到字段引用）
 		inventoryUI.RefreshAll();
 
+		// 额外调试信息，输出 items 与生成格子数（如果有）
+		int itemCount = InventoryManager.Instance != null ? InventoryManager.Instance.items.Count : 0;
+		Debug.Log($"[InventoryDemoBuilder] Demo UI built. Inventory items count: {itemCount}");
+		if (inventoryUI.itemGridParent != null)
+		{
+			Debug.Log($"[InventoryDemoBuilder] ItemGridParent childCount = {inventoryUI.itemGridParent.childCount}");
+		}
+
 		Debug.Log("[InventoryDemoBuilder] Demo UI built. Play the scene and check Console for Inventory logs.");
 	}
 
@@ -123,7 +131,13 @@ public class InventoryDemoBuilder : MonoBehaviour
 		rt.sizeDelta = new Vector2(200, 30);
 		var txt = go.AddComponent<Text>();
 		txt.text = text;
-		txt.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+		// Unity 部分版本不再包含 Arial.ttf，使用 LegacyRuntime.ttf 更通用
+		Font builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+		if (builtin == null)
+		{
+			Debug.LogWarning("[InventoryDemoBuilder] LegacyRuntime.ttf not found; text may not render.");
+		}
+		txt.font = builtin;
 		txt.fontSize = 18;
 		txt.alignment = TextAnchor.MiddleCenter;
 		txt.color = Color.white;
