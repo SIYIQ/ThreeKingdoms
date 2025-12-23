@@ -7,6 +7,11 @@ public class InventoryDemoBuilder : MonoBehaviour
 {
 	public bool buildOnStart = true;
 	public bool use2D = true;
+	// 可选：在 Inspector 中直接指定 demo 使用的 sprites（无需移动资源）
+	public Sprite demoWeaponSprite;
+	public Sprite demoClothSprite;
+	public Sprite demoItemSprite;
+	public Sprite demoCharacterSprite;
 
 	[ContextMenu("Build Demo UI")]
 	public void BuildDemoUI()
@@ -243,6 +248,15 @@ public class InventoryDemoBuilder : MonoBehaviour
 		inventoryUI.weaponSlotImage = eqImgs[0];
 		inventoryUI.clothingSlotImage = eqImgs[1];
 		inventoryUI.extraEquipSlotImages = new Image[2] { eqImgs[2], eqImgs[3] };
+		// ensure equip slots start as empty (gray)
+		for (int i = 0; i < eqImgs.Length; i++)
+		{
+			if (eqImgs[i] != null)
+			{
+				eqImgs[i].sprite = null;
+				eqImgs[i].color = new Color(0.25f, 0.25f, 0.25f, 1f);
+			}
+		}
 		// statsGO 放在左侧底部区域
 		statsRt.anchorMin = new Vector2(0f, 0f);
 		statsRt.anchorMax = new Vector2(1f, 0.45f);
@@ -322,6 +336,17 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 添加 Input 控制器（处理打开背包和快捷键）
 		var inputGO = new GameObject("InventoryInput");
 		inputGO.AddComponent<InventoryInput>();
+
+		// 如果用户在 Inspector 指定了 demo sprites，尝试把它们注入到 TestInventorySetup（方便测试）
+		var ts = FindObjectOfType<TestInventorySetup>();
+		if (ts != null)
+		{
+			if (demoWeaponSprite != null) ts.sampleWeaponIcon = demoWeaponSprite;
+			if (demoClothSprite != null) ts.sampleClothIcon = demoClothSprite;
+			if (demoItemSprite != null) ts.sampleItemIcon = demoItemSprite;
+			if (demoCharacterSprite != null) charImg.sprite = demoCharacterSprite;
+			Debug.Log("[InventoryDemoBuilder] Injected demo sprites into TestInventorySetup (if fields set).");
+		}
 
 		// 创建一个简单的场景：2D 或 3D（根据 use2D）
 		GameObject worldRoot = new GameObject("DemoWorld");
