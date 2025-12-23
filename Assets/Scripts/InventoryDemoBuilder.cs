@@ -242,7 +242,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 手动触发一次刷新（因为 InventoryUI 可能在被添加时还没收到字段引用）
 		inventoryUI.RefreshAll();
 
-		// 在左侧下方创建三条进度条（HP/MP/EXP）
+		// 在左侧下方创建三条进度条（HP/MP/EXP）并使用 VerticalLayoutGroup 以保证规整
 		GameObject barsGO = new GameObject("StatBars");
 		barsGO.transform.SetParent(leftPanel.transform, false);
 		var barsRt = barsGO.AddComponent<RectTransform>();
@@ -250,6 +250,10 @@ public class InventoryDemoBuilder : MonoBehaviour
 		barsRt.anchorMax = new Vector2(0.95f, 0.4f);
 		barsRt.offsetMin = Vector2.zero;
 		barsRt.offsetMax = Vector2.zero;
+		var vlg = barsGO.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
+		vlg.childControlHeight = false;
+		vlg.childControlWidth = true;
+		vlg.spacing = 8;
 
 		// Helper to create a bar: background + fill + label
 		System.Func<Transform, string, Color, Image> createBar = (parent, label, color) =>
@@ -257,9 +261,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 			GameObject bar = new GameObject(label + "_Bar");
 			bar.transform.SetParent(parent, false);
 			var brt = bar.AddComponent<RectTransform>();
-			brt.anchorMin = new Vector2(0.05f, 0f);
-			brt.anchorMax = new Vector2(0.95f, 1f);
-			brt.sizeDelta = new Vector2(0, 28);
+			brt.sizeDelta = new Vector2(0, 34);
 			var bg = bar.AddComponent<Image>();
 			bg.color = new Color(0.2f, 0.15f, 0.12f, 1f);
 

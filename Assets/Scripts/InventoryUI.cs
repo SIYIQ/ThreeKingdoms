@@ -175,18 +175,24 @@ public class InventoryUI : MonoBehaviour
 				var btn = createdSlots[i].GetComponentInChildren<Button>();
 				if (btn != null)
 				{
+					// capture the item reference directly to avoid index mismatch
+					var capturedItem = item;
 					int captureIndex = i;
 					btn.onClick.RemoveAllListeners();
 					btn.onClick.AddListener(() =>
 					{
-						var it = InventoryManager.Instance.items[Mathf.Clamp(captureIndex, 0, InventoryManager.Instance.items.Count-1)];
-						if (it.itemType == ItemType.Consumable)
+						if (capturedItem == null)
 						{
-							InventoryManager.Instance.UseItem(it);
+							Debug.LogWarning("[InventoryUI] clicked slot but item is null");
+							return;
+						}
+						if (capturedItem.itemType == ItemType.Consumable)
+						{
+							InventoryManager.Instance.UseItem(capturedItem);
 						}
 						else
 						{
-							InventoryManager.Instance.EquipItem(it);
+							InventoryManager.Instance.EquipItem(capturedItem);
 						}
 						RefreshAll();
 					});
