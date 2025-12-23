@@ -21,6 +21,10 @@ public class InventoryUI : MonoBehaviour
 	public int gridRows = 4;
 	[Header("根面板（用于打开/关闭背包）")]
 	public GameObject rootPanel;
+	[Header("属性进度条")]
+	public Image hpBar;
+	public Image mpBar;
+	public Image expBar;
 
 	[Header("属性文本")]
 	public Text hpText;
@@ -276,6 +280,21 @@ public class InventoryUI : MonoBehaviour
 		if (mgr == null) return;
 		if (hpText != null) hpText.text = $"HP: {mgr.currentHP}/{mgr.GetTotalHP()}";
 		if (mpText != null) mpText.text = $"MP: {mgr.currentMP}/{mgr.GetTotalMP()}";
+		// update bars (guard divide by zero)
+		if (hpBar != null)
+		{
+			int totalHP = mgr.GetTotalHP();
+			hpBar.fillAmount = totalHP > 0 ? Mathf.Clamp01((float)mgr.currentHP / totalHP) : 0f;
+		}
+		if (mpBar != null)
+		{
+			int totalMP = mgr.GetTotalMP();
+			mpBar.fillAmount = totalMP > 0 ? Mathf.Clamp01((float)mgr.currentMP / totalMP) : 0f;
+		}
+		if (expBar != null)
+		{
+			expBar.fillAmount = mgr.maxEXP > 0 ? Mathf.Clamp01((float)mgr.currentEXP / mgr.maxEXP) : 0f;
+		}
 		if (attackText != null) attackText.text = $"ATK: {mgr.GetTotalAttack()}";
 	}
 }

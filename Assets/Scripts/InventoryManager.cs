@@ -20,6 +20,9 @@ public class InventoryManager : MonoBehaviour
 	public int baseHP = 100;
 	public int baseMP = 30;
 	public int baseAttack = 10;
+	// 经验值（用于 UI 的进度条示例）
+	public int currentEXP;
+	public int maxEXP;
 	// 实时属性（用于演示使用道具时的当前血蓝值）
 	public int currentHP;
 	public int currentMP;

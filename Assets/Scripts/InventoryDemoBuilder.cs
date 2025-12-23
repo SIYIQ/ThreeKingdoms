@@ -138,7 +138,7 @@ public class InventoryDemoBuilder : MonoBehaviour
 		inventoryUI.weaponSlotImage = weaponSlot.GetComponent<Image>();
 		inventoryUI.clothingSlotImage = clothSlot.GetComponent<Image>();
 		inventoryUI.extraEquipSlotImages = new Image[2] { extra0.GetComponent<Image>(), extra1.GetComponent<Image>() };
-		// 创建一个根面板，将装备/属性/背包网格放到该面板之下（用于打开/关闭）
+		// 创建一个根面板，将页面一分为二：左侧为人物+属性，右侧为背包格子
 		GameObject rootPanel = new GameObject("InventoryRootPanel");
 		rootPanel.transform.SetParent(canvasGO.transform, false);
 		var rootRt = rootPanel.AddComponent<RectTransform>();
@@ -150,12 +150,42 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 更明显的底色，避免看起来太透明
 		rootImg.color = new Color(0f, 0f, 0f, 0.95f);
 
-		// 将已有 UI 元素移到 rootPanel 下
-		gridGO.transform.SetParent(rootPanel.transform, false);
-		statsGO.transform.SetParent(rootPanel.transform, false);
-		equipGO.transform.SetParent(rootPanel.transform, false);
-		uiGO.transform.SetParent(rootPanel.transform, false);
-		charGO.transform.SetParent(rootPanel.transform, false);
+		// 左侧面板（人物和属性），占 root 的左半部分
+		GameObject leftPanel = new GameObject("LeftPanel");
+		leftPanel.transform.SetParent(rootPanel.transform, false);
+		var leftRt = leftPanel.AddComponent<RectTransform>();
+		leftRt.anchorMin = new Vector2(0f, 0f);
+		leftRt.anchorMax = new Vector2(0.5f, 1f);
+		leftRt.offsetMin = Vector2.zero;
+		leftRt.offsetMax = Vector2.zero;
+
+		// 右侧面板（背包格子），占 root 的右半部分
+		GameObject rightPanel = new GameObject("RightPanel");
+		rightPanel.transform.SetParent(rootPanel.transform, false);
+		var rightRt = rightPanel.AddComponent<RectTransform>();
+		rightRt.anchorMin = new Vector2(0.5f, 0f);
+		rightRt.anchorMax = new Vector2(1f, 1f);
+		rightRt.offsetMin = Vector2.zero;
+		rightRt.offsetMax = Vector2.zero;
+
+		// 将已有 UI 元素移到左右两侧面板
+		gridGO.transform.SetParent(rightPanel.transform, false);
+		statsGO.transform.SetParent(leftPanel.transform, false);
+		equipGO.transform.SetParent(leftPanel.transform, false);
+		uiGO.transform.SetParent(rightPanel.transform, false);
+		charGO.transform.SetParent(leftPanel.transform, false);
+
+		// 在左侧面板把字符立绘和装备区放在上半区；属性条放底部
+		// 调整 charGO 与 equipGO 的 Anchors（char 占左上大区，equip 小格放右半）
+		charRt.anchorMin = new Vector2(0f, 0.45f);
+		charRt.anchorMax = new Vector2(0.6f, 1f);
+		equipRt.anchorMin = new Vector2(0.6f, 0.55f);
+		equipRt.anchorMax = new Vector2(1f, 1f);
+		// statsGO 放在左侧底部区域
+		statsRt.anchorMin = new Vector2(0f, 0f);
+		statsRt.anchorMax = new Vector2(1f, 0.45f);
+		statsRt.offsetMin = Vector2.zero;
+		statsRt.offsetMax = Vector2.zero;
 
 		// 把 inventoryUI 的 rootPanel 字段指向该面板，并初始关闭（按 I 打开）
 		inventoryUI.rootPanel = rootPanel;
@@ -164,6 +194,62 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 手动触发一次刷新（因为 InventoryUI 可能在被添加时还没收到字段引用）
 		inventoryUI.RefreshAll();
 
+		// 在左侧下方创建三条进度条（HP/MP/EXP）
+		GameObject barsGO = new GameObject("StatBars");
+		barsGO.transform.SetParent(leftPanel.transform, false);
+		var barsRt = barsGO.AddComponent<RectTransform>();
+		barsRt.anchorMin = new Vector2(0.05f, 0.05f);
+		barsRt.anchorMax = new Vector2(0.95f, 0.4f);
+		barsRt.offsetMin = Vector2.zero;
+		barsRt.offsetMax = Vector2.zero;
+
+		// Helper to create a bar: background + fill + label
+		System.Func<Transform, string, Color, Image> createBar = (parent, label, color) =>
+		{
+			GameObject bar = new GameObject(label + "_Bar");
+			bar.transform.SetParent(parent, false);
+			var brt = bar.AddComponent<RectTransform>();
+			brt.anchorMin = new Vector2(0.05f, 0f);
+			brt.anchorMax = new Vector2(0.95f, 1f);
+			brt.sizeDelta = new Vector2(0, 28);
+			var bg = bar.AddComponent<Image>();
+			bg.color = new Color(0.2f, 0.15f, 0.12f, 1f);
+
+			GameObject fill = new GameObject("Fill");
+			fill.transform.SetParent(bar.transform, false);
+			var frit = fill.AddComponent<RectTransform>();
+			frit.anchorMin = new Vector2(0f, 0f);
+			frit.anchorMax = new Vector2(1f, 1f);
+			frit.offsetMin = new Vector2(4, 4);
+			frit.offsetMax = new Vector2(-4, -4);
+			var fimg = fill.AddComponent<Image>();
+			fimg.color = color;
+			fimg.type = Image.Type.Filled;
+			fimg.fillMethod = Image.FillMethod.Horizontal;
+			fimg.fillOrigin = 0;
+			fimg.fillAmount = 0.5f;
+
+			GameObject lbl = new GameObject("Label");
+			lbl.transform.SetParent(bar.transform, false);
+			var ltxt = lbl.AddComponent<Text>();
+			ltxt.text = label;
+			ltxt.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+			ltxt.alignment = TextAnchor.MiddleLeft;
+			ltxt.color = Color.white;
+			ltxt.rectTransform.anchorMin = new Vector2(0f, 0f);
+			ltxt.rectTransform.anchorMax = new Vector2(1f, 1f);
+			ltxt.rectTransform.offsetMin = new Vector2(8, 0);
+			ltxt.rectTransform.offsetMax = new Vector2(-8, 0);
+
+			return fimg;
+		};
+
+		var hpFill = createBar(barsGO.transform, "HP", new Color(1f, 0.2f, 0.2f));
+		var mpFill = createBar(barsGO.transform, "MP", new Color(0.2f, 0.6f, 1f));
+		var expFill = createBar(barsGO.transform, "EXP", new Color(1f, 0.8f, 0.2f));
+		inventoryUI.hpBar = hpFill;
+		inventoryUI.mpBar = mpFill;
+		inventoryUI.expBar = expFill;
 		// 创建几个场景中的“拾取物”，用按钮点击拾取（便于演示）
 		CreatePickupButton(canvasGO.transform, new Vector2(0.15f, 0.2f), "拾取: 小红瓶", "i_potion_01", ItemType.Consumable, 0, 50, 0);
 		CreatePickupButton(canvasGO.transform, new Vector2(0.3f, 0.2f), "拾取: 短剑", "i_sword_02", ItemType.Weapon, 0, 0, 20);

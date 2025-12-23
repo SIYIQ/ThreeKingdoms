@@ -33,6 +33,12 @@ public class TestInventorySetup : MonoBehaviour
 		mgr.baseHP = 311;
 		mgr.baseMP = 314;
 		mgr.baseAttack = 79;
+		// 示例经验与当前经验
+		mgr.maxEXP = 675;
+		mgr.currentEXP = 338;
+		// 初始化当前血蓝（演示）
+		mgr.currentHP = mgr.GetTotalHP();
+		mgr.currentMP = mgr.GetTotalMP();
 
 		// 触发 UI 刷新（事件会在 AddItem 内触发）
 	}
