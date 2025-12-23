@@ -45,6 +45,7 @@ public class InventoryUI : MonoBehaviour
 		if (InventoryManager.Instance != null)
 		{
 			InventoryManager.Instance.OnInventoryChanged += RefreshInventoryGrid;
+			InventoryManager.Instance.OnInventoryChanged += RefreshEquipment;
 			InventoryManager.Instance.OnStatsChanged += RefreshStats;
 		}
 		RefreshAll();
@@ -55,6 +56,7 @@ public class InventoryUI : MonoBehaviour
 		if (InventoryManager.Instance != null)
 		{
 			InventoryManager.Instance.OnInventoryChanged -= RefreshInventoryGrid;
+			InventoryManager.Instance.OnInventoryChanged -= RefreshEquipment;
 			InventoryManager.Instance.OnStatsChanged -= RefreshStats;
 		}
 	}
@@ -87,9 +89,9 @@ public class InventoryUI : MonoBehaviour
 		if (img == null) return;
 		if (item == null)
 		{
+			// 显示默认灰色底表示空装备槽
 			img.sprite = null;
-			img.sprite = null;
-			img.color = new Color(1,1,1,0); // 隐藏
+			img.color = new Color(0.25f, 0.25f, 0.25f, 1f);
 		}
 		else
 		{
