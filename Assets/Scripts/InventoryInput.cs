@@ -25,7 +25,18 @@ public class InventoryInput : MonoBehaviour
 			// Try to refresh reference if missing (DemoBuilder may create UI after this component)
 			if (inventoryUI == null)
 			{
+				// First try to find active
 				inventoryUI = FindObjectOfType<InventoryUI>();
+				// If still null, try to find inactive instances as well
+				if (inventoryUI == null)
+				{
+					var all = Resources.FindObjectsOfTypeAll(typeof(InventoryUI)) as InventoryUI[];
+					if (all != null && all.Length > 0)
+					{
+						inventoryUI = all[0];
+						Debug.Log("[InventoryInput] Found InventoryUI via Resources.FindObjectsOfTypeAll (inactive)");
+					}
+				}
 				if (inventoryUI == null)
 				{
 					Debug.LogWarning("[InventoryInput] Toggle pressed but InventoryUI still not found.");
