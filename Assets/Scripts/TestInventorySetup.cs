@@ -19,6 +19,8 @@ public class TestInventorySetup : MonoBehaviour
 		Sprite sWeapon = sampleWeaponIcon ?? LoadSpriteByName("arms");
 		Sprite sCloth = sampleClothIcon ?? LoadSpriteByName("clothes");
 		Sprite sItem = sampleItemIcon ?? LoadSpriteByName("blue");
+		// 尝试加载红色小瓶图
+		Sprite sRed = LoadSpriteByName("red");
 
 		mgr.AddItem(new Item("i_sword_01", "短剑", ItemType.Weapon, hp:0, mp:0, atk:15) { icon = sWeapon });
 		Debug.Log("[TestInventorySetup] Added sample weapon 短剑");

@@ -150,37 +150,85 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// 更明显的底色，避免看起来太透明
 		rootImg.color = new Color(0f, 0f, 0f, 0.95f);
 
-		// 左侧面板（人物和属性），占 root 的左半部分
+		// 左侧面板（人物和属性），占 root 的左部分（留更多空间）
 		GameObject leftPanel = new GameObject("LeftPanel");
 		leftPanel.transform.SetParent(rootPanel.transform, false);
 		var leftRt = leftPanel.AddComponent<RectTransform>();
 		leftRt.anchorMin = new Vector2(0f, 0f);
-		leftRt.anchorMax = new Vector2(0.5f, 1f);
+		leftRt.anchorMax = new Vector2(0.58f, 1f);
 		leftRt.offsetMin = Vector2.zero;
 		leftRt.offsetMax = Vector2.zero;
 
-		// 右侧面板（背包格子），占 root 的右半部分
+		// 右侧面板（背包格子），占 root 的右部分
 		GameObject rightPanel = new GameObject("RightPanel");
 		rightPanel.transform.SetParent(rootPanel.transform, false);
 		var rightRt = rightPanel.AddComponent<RectTransform>();
-		rightRt.anchorMin = new Vector2(0.5f, 0f);
+		rightRt.anchorMin = new Vector2(0.58f, 0f);
 		rightRt.anchorMax = new Vector2(1f, 1f);
 		rightRt.offsetMin = Vector2.zero;
 		rightRt.offsetMax = Vector2.zero;
 
 		// 将已有 UI 元素移到左右两侧面板
 		gridGO.transform.SetParent(rightPanel.transform, false);
+		// make grid fill rightPanel with padding
+		gridRt.anchorMin = new Vector2(0.03f, 0.05f);
+		gridRt.anchorMax = new Vector2(0.97f, 0.95f);
+		gridRt.offsetMin = Vector2.zero;
+		gridRt.offsetMax = Vector2.zero;
+		// adjust grid look to fit screen (smaller cells)
+		gridLayout.cellSize = new Vector2(72, 72);
+		gridLayout.constraintCount = 5;
 		statsGO.transform.SetParent(leftPanel.transform, false);
-		equipGO.transform.SetParent(leftPanel.transform, false);
 		uiGO.transform.SetParent(rightPanel.transform, false);
-		charGO.transform.SetParent(leftPanel.transform, false);
+		// create leftTop container for char + equip
+		GameObject leftTop = new GameObject("LeftTop");
+		leftTop.transform.SetParent(leftPanel.transform, false);
+		var leftTopRt = leftTop.AddComponent<RectTransform>();
+		leftTopRt.anchorMin = new Vector2(0f, 0.45f);
+		leftTopRt.anchorMax = new Vector2(1f, 1f);
+		leftTopRt.offsetMin = Vector2.zero;
+		leftTopRt.offsetMax = Vector2.zero;
+		// parent char and equip into leftTop
+		charGO.transform.SetParent(leftTop.transform, false);
+		equipGO.transform.SetParent(leftTop.transform, false);
+		// stats placed in bottom area
+		statsGO.transform.SetParent(leftPanel.transform, false);
 
-		// 在左侧面板把字符立绘和装备区放在上半区；属性条放底部
-		// 调整 charGO 与 equipGO 的 Anchors（char 占左上大区，equip 小格放右半）
-		charRt.anchorMin = new Vector2(0f, 0.45f);
-		charRt.anchorMax = new Vector2(0.6f, 1f);
-		equipRt.anchorMin = new Vector2(0.6f, 0.55f);
-		equipRt.anchorMax = new Vector2(1f, 1f);
+		// 在 leftTop 中调整 charGO 与 equipGO 的 Anchors（char 占左大区，equip 放右侧窄列）
+		charRt.anchorMin = new Vector2(0f, 0f);
+		charRt.anchorMax = new Vector2(0.72f, 1f);
+		charRt.offsetMin = new Vector2(8, 8);
+		charRt.offsetMax = new Vector2(-8, -8);
+		equipRt.anchorMin = new Vector2(0.74f, 0.1f);
+		equipRt.anchorMax = new Vector2(1f, 0.9f);
+		equipRt.offsetMin = Vector2.zero;
+		equipRt.offsetMax = Vector2.zero;
+		// create 2x2 grid for equip slots inside equipGO
+		var equipLayout = equipGO.AddComponent<UnityEngine.UI.GridLayoutGroup>();
+		equipLayout.cellSize = new Vector2(56, 56);
+		equipLayout.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
+		equipLayout.constraintCount = 2;
+		equipLayout.spacing = new Vector2(6, 6);
+		equipLayout.padding = new RectOffset(4, 4, 4, 4);
+		// clear any previous children and create 4 equip slot images
+		for (int i = equipGO.transform.childCount - 1; i >= 0; i--) DestroyImmediate(equipGO.transform.GetChild(i).gameObject);
+		var eqSlots = new GameObject[4];
+		var eqImgs = new Image[4];
+		for (int i = 0; i < 4; i++)
+		{
+			var s = new GameObject("EquipSlot_" + i);
+			s.transform.SetParent(equipGO.transform, false);
+			var srt = s.AddComponent<RectTransform>();
+			srt.sizeDelta = new Vector2(56, 56);
+			var simg = s.AddComponent<Image>();
+			simg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
+			eqSlots[i] = s;
+			eqImgs[i] = simg;
+		}
+		// bind to inventoryUI: weapon, clothing, extra0, extra1
+		inventoryUI.weaponSlotImage = eqImgs[0];
+		inventoryUI.clothingSlotImage = eqImgs[1];
+		inventoryUI.extraEquipSlotImages = new Image[2] { eqImgs[2], eqImgs[3] };
 		// statsGO 放在左侧底部区域
 		statsRt.anchorMin = new Vector2(0f, 0f);
 		statsRt.anchorMax = new Vector2(1f, 0.45f);
@@ -268,7 +316,16 @@ public class InventoryDemoBuilder : MonoBehaviour
 			player2D.transform.SetParent(worldRoot.transform, false);
 			player2D.transform.position = new Vector3(-2f, 0f, 0f);
 			var spr = player2D.AddComponent<SpriteRenderer>();
-			spr.sprite = CreateColoredSprite(48, 48, new Color(0.2f, 0.6f, 1f));
+			// 尝试加载 character 图
+			var charSprite = Resources.Load<Sprite>("Textures/character");
+			if (charSprite != null)
+			{
+				spr.sprite = charSprite;
+			}
+			else
+			{
+				spr.sprite = CreateColoredSprite(48, 48, new Color(0.2f, 0.6f, 1f));
+			}
 			player2D.transform.localScale = Vector3.one * 0.5f;
 			player2D.tag = "Player";
 			var rb2d = player2D.AddComponent<Rigidbody2D>();
@@ -281,7 +338,9 @@ public class InventoryDemoBuilder : MonoBehaviour
 			pickup2D.transform.SetParent(worldRoot.transform, false);
 			pickup2D.transform.position = new Vector3(0f, 0f, 0f);
 			var pspr = pickup2D.AddComponent<SpriteRenderer>();
-			pspr.sprite = CreateColoredSprite(32, 32, Color.red);
+			var potionSprite = Resources.Load<Sprite>("Textures/red");
+			if (potionSprite != null) pspr.sprite = potionSprite;
+			else pspr.sprite = CreateColoredSprite(32, 32, Color.red);
 			pickup2D.transform.localScale = Vector3.one * 0.5f;
 			var pcol = pickup2D.AddComponent<BoxCollider2D>();
 			pcol.isTrigger = true;
@@ -311,7 +370,20 @@ public class InventoryDemoBuilder : MonoBehaviour
 			pickup.transform.position = new Vector3(0f, 0f, 0f);
 			pickup.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
 			var prend = pickup.GetComponent<Renderer>();
-			if (prend != null) prend.material.color = Color.red;
+			if (prend != null)
+			{
+				var potionTex = Resources.Load<Sprite>("Textures/red");
+				if (potionTex != null)
+				{
+					// apply as material color fallback
+					prend.material.color = Color.white;
+					// can't set sprite on mesh renderer; keep red color
+				}
+				else
+				{
+					prend.material.color = Color.red;
+				}
+			}
 			var pc = pickup.GetComponent<Collider>();
 			if (pc != null) pc.isTrigger = true;
 			var pickupScript = pickup.AddComponent<PickupItem>();
