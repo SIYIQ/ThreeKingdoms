@@ -21,6 +21,14 @@ public class InventoryDemoBuilder : MonoBehaviour
 		canvasGO.AddComponent<CanvasScaler>();
 		canvasGO.AddComponent<GraphicRaycaster>();
 
+		// 创建简单 Camera（避免 Game 视图显示 "No cameras rendering"）
+		GameObject camGO = new GameObject("Main Camera");
+		var cam = camGO.AddComponent<Camera>();
+		cam.clearFlags = CameraClearFlags.SolidColor;
+		cam.backgroundColor = Color.black;
+		camGO.tag = "MainCamera";
+		camGO.transform.position = new Vector3(0, 0, -10);
+
 		// EventSystem（如果场景里没有）
 		if (FindObjectOfType<EventSystem>() == null)
 		{
