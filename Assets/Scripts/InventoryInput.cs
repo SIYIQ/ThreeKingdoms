@@ -14,7 +14,7 @@ public class InventoryInput : MonoBehaviour
 		inventoryUI = FindObjectOfType<InventoryUI>();
 		if (inventoryUI == null)
 		{
-			Debug.LogWarning("[InventoryInput] No InventoryUI found in scene.");
+			Debug.LogWarning("[InventoryInput] No InventoryUI found in Start(); will try again on input.");
 		}
 	}
 
@@ -22,6 +22,16 @@ public class InventoryInput : MonoBehaviour
 	{
 		if (Input.GetKeyDown(toggleKey))
 		{
+			// Try to refresh reference if missing (DemoBuilder may create UI after this component)
+			if (inventoryUI == null)
+			{
+				inventoryUI = FindObjectOfType<InventoryUI>();
+				if (inventoryUI == null)
+				{
+					Debug.LogWarning("[InventoryInput] Toggle pressed but InventoryUI still not found.");
+					return;
+				}
+			}
 			ToggleInventory();
 		}
 		if (Input.GetKeyDown(useConsumableKey1))
@@ -37,9 +47,19 @@ public class InventoryInput : MonoBehaviour
 
 	public void ToggleInventory()
 	{
-		if (inventoryUI == null || inventoryUI.rootPanel == null)
+		// ensure we have valid refs
+		if (inventoryUI == null)
 		{
-			Debug.LogWarning("[InventoryInput] InventoryUI or rootPanel not assigned.");
+			inventoryUI = FindObjectOfType<InventoryUI>();
+			if (inventoryUI == null)
+			{
+				Debug.LogWarning("[InventoryInput] ToggleInventory: InventoryUI not found.");
+				return;
+			}
+		}
+		if (inventoryUI.rootPanel == null)
+		{
+			Debug.LogWarning("[InventoryInput] ToggleInventory: rootPanel not assigned on InventoryUI.");
 			return;
 		}
 		bool newState = !inventoryUI.rootPanel.activeSelf;
