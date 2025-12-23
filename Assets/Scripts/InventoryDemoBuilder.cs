@@ -14,6 +14,10 @@ public class InventoryDemoBuilder : MonoBehaviour
 		// InventoryManager（单例）
 		GameObject mgrGO = new GameObject("InventoryManager");
 		var mgr = mgrGO.AddComponent<InventoryManager>();
+		// 确保初始装备槽为空
+		mgr.weaponSlot = null;
+		mgr.clothingSlot = null;
+		mgr.extraEquipSlots = new Item[2];
 
 		// Canvas
 		GameObject canvasGO = new GameObject("DemoCanvas");

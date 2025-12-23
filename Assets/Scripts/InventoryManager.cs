@@ -80,8 +80,17 @@ public class InventoryManager : MonoBehaviour
 	public bool EquipToWeapon(Item item)
 	{
 		if (item == null || item.itemType != ItemType.Weapon) return false;
+		// If same item already equipped, do nothing
+		if (weaponSlot == item) return false;
+		// If there's an existing weapon, return it to inventory
+		if (weaponSlot != null)
+		{
+			AddItem(weaponSlot);
+			Debug.Log($"[InventoryManager] EquipToWeapon: returned previous {weaponSlot.itemName} to inventory");
+		}
+		// Equip new item (remove from inventory only if it exists there)
 		weaponSlot = item;
-		RemoveItem(item);
+		if (items.Contains(item)) RemoveItem(item);
 		OnInventoryChanged?.Invoke();
 		OnStatsChanged?.Invoke();
 		Debug.Log($"[InventoryManager] EquipToWeapon: {item.itemName}");
@@ -91,8 +100,14 @@ public class InventoryManager : MonoBehaviour
 	public bool EquipToClothing(Item item)
 	{
 		if (item == null || item.itemType != ItemType.Clothing) return false;
+		if (clothingSlot == item) return false;
+		if (clothingSlot != null)
+		{
+			AddItem(clothingSlot);
+			Debug.Log($"[InventoryManager] EquipToClothing: returned previous {clothingSlot.itemName} to inventory");
+		}
 		clothingSlot = item;
-		RemoveItem(item);
+		if (items.Contains(item)) RemoveItem(item);
 		OnInventoryChanged?.Invoke();
 		OnStatsChanged?.Invoke();
 		Debug.Log($"[InventoryManager] EquipToClothing: {item.itemName}");
@@ -102,22 +117,29 @@ public class InventoryManager : MonoBehaviour
 	public bool EquipToExtra(Item item)
 	{
 		if (item == null) return false;
-		// 放到额外槽第一个空位
+		// If item already in an extra slot, do nothing
+		for (int k = 0; k < extraEquipSlots.Length; k++)
+		{
+			if (extraEquipSlots[k] == item) return false;
+		}
+		// Put into first empty extra slot
 		for (int i = 0; i < extraEquipSlots.Length; i++)
 		{
 			if (extraEquipSlots[i] == null)
 			{
 				extraEquipSlots[i] = item;
-				RemoveItem(item);
+				if (items.Contains(item)) RemoveItem(item);
 				OnInventoryChanged?.Invoke();
 				OnStatsChanged?.Invoke();
 				Debug.Log($"[InventoryManager] EquipToExtra[{i}]: {item.itemName}");
 				return true;
 			}
 		}
-		// 若满则替换第0位
+		// If full, swap with slot 0 (return previous to inventory first)
+		var prev = extraEquipSlots[0];
+		if (prev != null) AddItem(prev);
 		extraEquipSlots[0] = item;
-		RemoveItem(item);
+		if (items.Contains(item)) RemoveItem(item);
 		OnInventoryChanged?.Invoke();
 		OnStatsChanged?.Invoke();
 		Debug.Log($"[InventoryManager] EquipToExtra[0] replace: {item.itemName}");

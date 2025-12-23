@@ -53,16 +53,30 @@ public class TestInventorySetup : MonoBehaviour
 #if UNITY_EDITOR
 		if (s == null)
 		{
-			// 编辑器下尝试直接从 Assets/Textures 加载为 Sprite 或 Texture2D 并创建 Sprite
-			var path = $"Assets/Textures/{name}.png";
-			var spr = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(path);
-			if (spr != null) return spr;
-			var tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-			if (tex != null)
+			// 编辑器下尝试在项目中搜索纹理或 sprite（支持 Assets/**/Textures 这种嵌套路径）
+			var guids = UnityEditor.AssetDatabase.FindAssets(name + " t:Texture2D");
+			if (guids != null && guids.Length > 0)
 			{
-				// create sprite from texture
-				var newSpr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
-				return newSpr;
+				var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+				var tex = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+				if (tex != null)
+				{
+					var newSpr = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+					Debug.Log($"[TestInventorySetup] Found texture via AssetDatabase at {path}");
+					return newSpr;
+				}
+			}
+			// 也尝试查找 Sprite 类型资源
+			var sGuids = UnityEditor.AssetDatabase.FindAssets(name + " t:Sprite");
+			if (sGuids != null && sGuids.Length > 0)
+			{
+				var spath = UnityEditor.AssetDatabase.GUIDToAssetPath(sGuids[0]);
+				var spr = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(spath);
+				if (spr != null)
+				{
+					Debug.Log($"[TestInventorySetup] Found sprite via AssetDatabase at {spath}");
+					return spr;
+				}
 			}
 		}
 #endif
