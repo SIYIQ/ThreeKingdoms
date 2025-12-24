@@ -49,6 +49,7 @@ public class InventoryUI : MonoBehaviour
 	[Header("可选背景与容器")]
 	public RectTransform gridBackground; // 浅色底板（右侧）可指定用于同步大小
 	public GameObject inventoryBackgroundPanel; // 整体背包底板（所有元素放在该对象下并通过 I 键切换）
+	public bool createOuterBackground = false; // 如果 false，不会创建最外层灰色背景，保留内部黑色底板
 	[Header("行为设置")]
 	public bool bindBackgroundToRoot = true; // 若 true，切换 rootPanel 或 inventoryBackgroundPanel 会同步另一方状态
 
@@ -314,7 +315,31 @@ public class InventoryUI : MonoBehaviour
 
 	private void EnsureInventoryBackgroundExists()
 	{
+		// 如果不希望创建最外层灰色背景，则不做创建操作，只尝试找到 gridBackground
+		if (!createOuterBackground)
+		{
+			// 如果场景中有之前自动创建的 InventoryBackground，销毁它以避免残留
+			var existingToRemove = GameObject.Find("InventoryBackground");
+			if (existingToRemove != null)
+			{
+				if (Application.isPlaying) Destroy(existingToRemove);
+				else DestroyImmediate(existingToRemove);
+				if (inventoryBackgroundPanel == existingToRemove) inventoryBackgroundPanel = null;
+			}
+
+			// 尝试为 gridBackground 建立引用（不改变层级结构）
+			if (gridBackground == null && itemGridParent != null)
+			{
+				var possible = itemGridParent.GetComponent<RectTransform>();
+				if (possible != null) gridBackground = possible;
+			}
+			// 不创建或包装任何父对象
+			return;
+		}
+
+		// 如果允许创建最外层背景且已存在引用，则不再创建
 		if (inventoryBackgroundPanel != null) return;
+
 		// Prefer to wrap rootPanel if available, otherwise wrap itemGridParent
 		Transform toWrap = null;
 		if (rootPanel != null) toWrap = rootPanel.transform;
