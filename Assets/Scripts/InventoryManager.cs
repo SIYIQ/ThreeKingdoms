@@ -53,6 +53,7 @@ public class InventoryManager : MonoBehaviour
 	#region 背包操作
 	public bool AddItem(Item item)
 	{
+		if (item == null) return false;
 		if (items.Count >= maxSlots) return false;
 		items.Add(item);
 		Debug.Log($"[InventoryManager] AddItem: {item?.itemName} (slots now {items.Count}/{maxSlots})");
@@ -85,7 +86,12 @@ public class InventoryManager : MonoBehaviour
 		// If there's an existing weapon, return it to inventory
 		if (weaponSlot != null)
 		{
-			AddItem(weaponSlot);
+			bool returned = AddItem(weaponSlot);
+			if (!returned)
+			{
+				Debug.LogWarning("[InventoryManager] EquipToWeapon failed - inventory full, cannot unequip current weapon");
+				return false;
+			}
 			Debug.Log($"[InventoryManager] EquipToWeapon: returned previous {weaponSlot.itemName} to inventory");
 		}
 		// Equip new item (remove from inventory only if it exists there)
@@ -103,7 +109,12 @@ public class InventoryManager : MonoBehaviour
 		if (clothingSlot == item) return false;
 		if (clothingSlot != null)
 		{
-			AddItem(clothingSlot);
+			bool returned = AddItem(clothingSlot);
+			if (!returned)
+			{
+				Debug.LogWarning("[InventoryManager] EquipToClothing failed - inventory full, cannot unequip current clothing");
+				return false;
+			}
 			Debug.Log($"[InventoryManager] EquipToClothing: returned previous {clothingSlot.itemName} to inventory");
 		}
 		clothingSlot = item;
@@ -137,7 +148,15 @@ public class InventoryManager : MonoBehaviour
 		}
 		// If full, swap with slot 0 (return previous to inventory first)
 		var prev = extraEquipSlots[0];
-		if (prev != null) AddItem(prev);
+		if (prev != null)
+		{
+			bool returned = AddItem(prev);
+			if (!returned)
+			{
+				Debug.LogWarning("[InventoryManager] EquipToExtra failed - inventory full, cannot unequip previous extra slot 0");
+				return false;
+			}
+		}
 		extraEquipSlots[0] = item;
 		if (items.Contains(item)) RemoveItem(item);
 		OnInventoryChanged?.Invoke();

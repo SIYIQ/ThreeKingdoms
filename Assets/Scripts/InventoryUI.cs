@@ -117,6 +117,19 @@ public class InventoryUI : MonoBehaviour
 		Debug.Log($"[InventoryUI] RefreshInventoryGrid - items count {mgr.items.Count}");
 		// 如果还没创建固定槽，先创建 gridColumns * gridRows 个槽
 		int totalSlots = Mathf.Max(1, gridColumns) * Mathf.Max(1, gridRows);
+		// 如果格子数量与期望不符，先清理并重建（支持在运行时修改 rows/cols）
+		if (createdSlots.Count != totalSlots)
+		{
+			// 销毁旧对象
+			for (int i = 0; i < createdSlots.Count; i++)
+			{
+				var g = createdSlots[i];
+				if (g != null) Destroy(g);
+			}
+			createdSlots.Clear();
+			createdSlotIcons.Clear();
+			createdSlotSelection.Clear();
+		}
 		if (createdSlots.Count == 0)
 		{
 			for (int i = 0; i < totalSlots; i++)
@@ -268,9 +281,20 @@ public class InventoryUI : MonoBehaviour
 		if (tooltipGO == null) return;
 		tooltipText.text = text;
 		tooltipGO.SetActive(true);
-		// offset so the tooltip doesn't occlude pointer and cause OnPointerExit
-		var pos = Input.mousePosition + new Vector3(16f, -16f, 0f);
-		tooltipGO.GetComponent<RectTransform>().position = pos;
+		// 将屏幕坐标转换到父 RectTransform 的本地坐标（兼容不同 Canvas renderMode）
+		var parentRt = tooltipGO.transform.parent as RectTransform;
+		if (parentRt == null)
+		{
+			// 回退到屏幕坐标（较少见）
+			var pos = Input.mousePosition + new Vector3(16f, -16f, 0f);
+			tooltipGO.GetComponent<RectTransform>().position = pos;
+			return;
+		}
+		var canvas = tooltipGO.GetComponentInParent<Canvas>();
+		Camera cam = (canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
+		Vector2 localPoint;
+		RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRt, Input.mousePosition, cam, out localPoint);
+		tooltipGO.GetComponent<RectTransform>().anchoredPosition = localPoint + new Vector2(16f, -16f);
 	}
 
 	public void HideTooltip()

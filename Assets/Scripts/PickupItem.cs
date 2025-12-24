@@ -3,6 +3,7 @@ using UnityEngine;
 // 附在场景拾取物上：被玩家触碰后添加到背包并销毁自己
 public class PickupItem : MonoBehaviour
 {
+	public bool prefer2D = true;
 	public string id = "i_potion_pick";
 	public string itemName = "小红瓶";
 	public ItemType itemType = ItemType.Consumable;
@@ -12,13 +13,19 @@ public class PickupItem : MonoBehaviour
 
 	private void Reset()
 	{
-		// 自动添加 2D/3D 碰撞体并设置为触发器，方便在不同演示方式下使用
-		var col2d = GetComponent<Collider2D>();
-		if (col2d == null) col2d = gameObject.AddComponent<BoxCollider2D>();
-		col2d.isTrigger = true;
-		var col3d = GetComponent<Collider>();
-		if (col3d == null) col3d = gameObject.AddComponent<BoxCollider>();
-		col3d.isTrigger = true;
+		// 根据 prefer2D 选择性添加 2D 或 3D 碰撞体，避免同时存在两种物理碰撞体
+		if (prefer2D)
+		{
+			var col2d = GetComponent<Collider2D>();
+			if (col2d == null) col2d = gameObject.AddComponent<BoxCollider2D>();
+			col2d.isTrigger = true;
+		}
+		else
+		{
+			var col3d = GetComponent<Collider>();
+			if (col3d == null) col3d = gameObject.AddComponent<BoxCollider>();
+			col3d.isTrigger = true;
+		}
 	}
 
 	private void OnTriggerEnter2D(Collider2D other)
