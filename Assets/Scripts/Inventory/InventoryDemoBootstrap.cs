@@ -8,10 +8,28 @@ public class InventoryDemoBootstrap : MonoBehaviour
 {
     void Awake()
     {
+        // Ensure there's a Camera (Game view shows "No cameras rendering" if none present)
+        if (Camera.main == null)
+        {
+            GameObject camGO = new GameObject("Main Camera");
+            Camera cam = camGO.AddComponent<Camera>();
+            cam.tag = "MainCamera";
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = Color.black;
+        }
+
         // Ensure there's a Canvas
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null)
             canvas = CreateCanvas("Canvas");
+
+        // Ensure there's an EventSystem for UI interactions
+        if (FindObjectOfType<UnityEngine.EventSystems.EventSystem>() == null)
+        {
+            GameObject es = new GameObject("EventSystem");
+            es.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            es.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+        }
 
         // Create InventoryRoot panel
         GameObject inventoryRoot = CreateUIObject("InventoryRoot", canvas.transform);
