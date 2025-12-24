@@ -205,7 +205,7 @@ public class InventoryUI : MonoBehaviour
         RefreshGrid();
     }
 
-    void RefreshGrid()
+    public void RefreshGrid()
     {
         List<ItemData> filtered = new List<ItemData>();
         foreach (var it in inventoryItems)
