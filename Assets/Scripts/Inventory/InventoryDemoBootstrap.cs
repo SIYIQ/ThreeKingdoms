@@ -95,7 +95,9 @@ public class InventoryDemoBootstrap : MonoBehaviour
         statusRt.offsetMin = new Vector2(10f, 10f);
         statusRt.offsetMax = new Vector2(-10f, -10f);
         VerticalLayoutGroup statusLayout = statusArea.AddComponent<VerticalLayoutGroup>();
-        statusLayout.spacing = 12f;
+        statusLayout.spacing = 8f;
+        statusLayout.childControlHeight = false;
+        statusLayout.childForceExpandHeight = false;
 
         // HP, MP, EXP bars
         StatusBar hp = CreateStatusBar(statusArea.transform, "HP", Color.red);
@@ -133,7 +135,8 @@ public class InventoryDemoBootstrap : MonoBehaviour
         GameObject gridArea = CreateUIObject("GridArea", rightArea.transform);
         RectTransform gridRt = gridArea.AddComponent<RectTransform>();
         gridRt.anchorMin = new Vector2(0f, 0f);
-        gridRt.anchorMax = new Vector2(1f, 0.9f);
+        // reduce top anchor to leave room for tabs
+        gridRt.anchorMax = new Vector2(1f, 0.85f);
         gridRt.offsetMin = new Vector2(10f, 10f);
         gridRt.offsetMax = new Vector2(-10f, -10f);
         GridLayoutGroup gridLayout = gridArea.AddComponent<GridLayoutGroup>();
@@ -226,6 +229,8 @@ public class InventoryDemoBootstrap : MonoBehaviour
         slot.allowedType = type;
         slot.icon = img;
         slot.emptySprite = GenerateColoredSprite(Color.grey);
+        // assign the inventoryUI reference so the slot can remove items from inventory list on drop
+        slot.inventoryUI = inventoryUI;
         return slot;
     }
 

@@ -40,7 +40,13 @@ public class EquipSlot : MonoBehaviour, IDropHandler, IPointerClickHandler
         if (from.Item.itemType != allowedType && !(allowedType == ItemType.Consumable && from.Item.itemType == ItemType.Consumable)) return;
 
         // Equip to this slot
-        SetItem(from.Item);
+        var item = from.Item;
+        SetItem(item);
+        // remove from inventory list if present
+        if (inventoryUI != null && inventoryUI.inventoryItems != null && inventoryUI.inventoryItems.Contains(item))
+        {
+            inventoryUI.inventoryItems.Remove(item);
+        }
         from.SetItem(null);
         DragDropManager.Clear();
     }

@@ -49,6 +49,7 @@ public class InventoryUI : MonoBehaviour
             }
         }
         RefreshGrid();
+        UpdateTabVisuals();
     }
 
     void Update()
@@ -64,7 +65,11 @@ public class InventoryUI : MonoBehaviour
         if (inventoryRoot == null) return;
         bool show = !inventoryRoot.activeSelf;
         inventoryRoot.SetActive(show);
-        if (show) RefreshGrid();
+        if (show)
+        {
+            // default to Equipment tab when opened
+            SwitchTab(Tab.Equipment);
+        }
     }
 
     void CreateGridSlots()
@@ -105,6 +110,9 @@ public class InventoryUI : MonoBehaviour
                 {
                     weaponSlot.SetItem(item);
                     slot.SetItem(null);
+                    // remove from inventory list so it disappears from grid
+                    if (inventoryItems != null && inventoryItems.Contains(item))
+                        inventoryItems.Remove(item);
                 }
                 break;
             case ItemType.Gear:
@@ -112,6 +120,8 @@ public class InventoryUI : MonoBehaviour
                 {
                     gearSlot.SetItem(item);
                     slot.SetItem(null);
+                    if (inventoryItems != null && inventoryItems.Contains(item))
+                        inventoryItems.Remove(item);
                 }
                 break;
             case ItemType.Consumable:
@@ -119,11 +129,15 @@ public class InventoryUI : MonoBehaviour
                 {
                     consumableSlotA.SetItem(item);
                     slot.SetItem(null);
+                    if (inventoryItems != null && inventoryItems.Contains(item))
+                        inventoryItems.Remove(item);
                 }
                 else if (consumableSlotB != null && consumableSlotB.CurrentItem == null)
                 {
                     consumableSlotB.SetItem(item);
                     slot.SetItem(null);
+                    if (inventoryItems != null && inventoryItems.Contains(item))
+                        inventoryItems.Remove(item);
                 }
                 else
                 {
@@ -204,6 +218,23 @@ public class InventoryUI : MonoBehaviour
     {
         activeTab = t;
         RefreshGrid();
+        UpdateTabVisuals();
+    }
+
+    void UpdateTabVisuals()
+    {
+        if (tabEquipButton != null)
+        {
+            var img = tabEquipButton.GetComponent<Image>();
+            if (img != null) img.color = (activeTab == Tab.Equipment) ? Color.white : new Color(0.85f, 0.85f, 0.85f);
+            tabEquipButton.transform.localScale = (activeTab == Tab.Equipment) ? Vector3.one * 1.02f : Vector3.one;
+        }
+        if (tabConsumableButton != null)
+        {
+            var img = tabConsumableButton.GetComponent<Image>();
+            if (img != null) img.color = (activeTab == Tab.Consumables) ? Color.white : new Color(0.85f, 0.85f, 0.85f);
+            tabConsumableButton.transform.localScale = (activeTab == Tab.Consumables) ? Vector3.one * 1.02f : Vector3.one;
+        }
     }
 
     public void RefreshGrid()
