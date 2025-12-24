@@ -49,6 +49,8 @@ public class InventoryUI : MonoBehaviour
 	[Header("可选背景与容器")]
 	public RectTransform gridBackground; // 浅色底板（右侧）可指定用于同步大小
 	public GameObject inventoryBackgroundPanel; // 整体背包底板（所有元素放在该对象下并通过 I 键切换）
+	[Header("行为设置")]
+	public bool bindBackgroundToRoot = true; // 若 true，切换 rootPanel 或 inventoryBackgroundPanel 会同步另一方状态
 
 	private void OnEnable()
 	{
@@ -60,6 +62,11 @@ public class InventoryUI : MonoBehaviour
 			InventoryManager.Instance.OnStatsChanged += RefreshStats;
 		}
 		RefreshAll();
+		// 保证两者状态同步（防止场景启动后 inactive 状态不一致）
+		if (bindBackgroundToRoot && inventoryBackgroundPanel != null && rootPanel != null)
+		{
+			inventoryBackgroundPanel.SetActive(rootPanel.activeSelf);
+		}
 	}
 
 	private void OnDisable()
@@ -342,6 +349,11 @@ public class InventoryUI : MonoBehaviour
 		inventoryBackgroundPanel.transform.SetParent(oldParent, false);
 		// Move the target under our background
 		toWrap.SetParent(inventoryBackgroundPanel.transform, false);
+		// Ensure active state mirrors rootPanel if binding requested
+		if (bindBackgroundToRoot && rootPanel != null)
+		{
+			inventoryBackgroundPanel.SetActive(rootPanel.activeSelf);
+		}
 		// if gridBackground not set, try to find a child named "GridBackground" under the new parent
 		if (gridBackground == null)
 		{
@@ -500,22 +512,22 @@ public class InventoryUI : MonoBehaviour
 			string n = s.name.ToLower();
 			if (n.Contains("arms") || n.Contains("weapon") || n.Contains("arm"))
 			{
-				defaultEquipSlotSprites[0] = s;
+				if (defaultEquipSlotSprites[0] == null) defaultEquipSlotSprites[0] = s;
 				continue;
 			}
 			if (n.Contains("clothes") || n.Contains("cloth") || n.Contains("clothing"))
 			{
-				defaultEquipSlotSprites[1] = s;
+				if (defaultEquipSlotSprites[1] == null) defaultEquipSlotSprites[1] = s;
 				continue;
 			}
 			if (n.Contains("potion") || n.Contains("hp") || n.Contains("consume") || n.Contains("consumable"))
 			{
-				defaultEquipSlotSprites[2] = s;
+				if (defaultEquipSlotSprites[2] == null) defaultEquipSlotSprites[2] = s;
 				continue;
 			}
 			if (n.Contains("misc") || n.Contains("character") || n.Contains("misc1") || n.Contains("misc2") || n.Contains("red"))
 			{
-				defaultEquipSlotSprites[3] = s;
+				if (defaultEquipSlotSprites[3] == null) defaultEquipSlotSprites[3] = s;
 				continue;
 			}
 		}
@@ -539,8 +551,17 @@ public class InventoryUI : MonoBehaviour
 #if UNITY_EDITOR
 	private void OnValidate()
 	{
-		// 在编辑器中尽量自动分配贴图，减少手动操作
-		AutoAssignDefaultSpritesEditor();
+		// 仅在默认贴图数组为空或全部为 null 时自动分配，避免覆盖手动拖拽的设置
+		bool needAssign = defaultEquipSlotSprites == null;
+		if (!needAssign)
+		{
+			needAssign = true;
+			foreach (var s in defaultEquipSlotSprites) if (s != null) { needAssign = false; break; }
+		}
+		if (needAssign)
+		{
+			AutoAssignDefaultSpritesEditor();
+		}
 	}
 #endif
 }
