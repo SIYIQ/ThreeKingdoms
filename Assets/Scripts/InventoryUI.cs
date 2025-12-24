@@ -335,8 +335,11 @@ public class InventoryUI : MonoBehaviour
 			rt.anchorMin = Vector2.zero;
 			rt.anchorMax = Vector2.one;
 			rt.sizeDelta = Vector2.zero;
-			var img = bg.AddComponent<Image>();
-			img.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+			// Do NOT add an opaque full-screen Image here by default — the project already
+			// contains child background elements (smaller black panels). Leaving the created
+			// wrapper without an Image prevents the unwanted gray overlay when toggling.
+			// If a visible background is desired, add an Image manually in the Editor or
+			// provide a child named "GridBackground" (the code will pick that up below).
 			inventoryBackgroundPanel = bg;
 		}
 
