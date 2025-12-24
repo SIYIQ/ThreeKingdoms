@@ -107,7 +107,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
 
         hp.SetValue(80f, 100f);
         mp.SetValue(40f, 100f);
-        exp.SetValue(30f, 100f);
+        atk.SetValue(30f, 100f);
 
         // Right area - tabs + grid
         GameObject rightArea = CreateUIObject("RightArea", inventoryRoot.transform);
