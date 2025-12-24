@@ -85,8 +85,8 @@ public class InventoryUI : MonoBehaviour
 		var mgr = InventoryManager.Instance;
 		if (mgr == null) return;
 
-		SetImage(weaponSlotImage, mgr.weaponSlot);
-		SetImage(clothingSlotImage, mgr.clothingSlot);
+		SetImage(weaponSlotImage, mgr.weaponSlot, 0);
+		SetImage(clothingSlotImage, mgr.clothingSlot, 1);
 		for (int i = 0; i < extraEquipSlotImages.Length; i++)
 		{
 			var slotImg = extraEquipSlotImages[i];
@@ -435,7 +435,12 @@ public class InventoryUI : MonoBehaviour
 		// 优先切换 inventoryBackgroundPanel（如果存在），避免只切换 child 导致 parent 背景残留造成灰色遮挡
 		if (Input.GetKeyDown(KeyCode.I))
 		{
-			if (inventoryBackgroundPanel != null)
+			// If rootPanel is child of inventoryBackgroundPanel, toggle the parent to avoid leaving background visible.
+			if (inventoryBackgroundPanel != null && rootPanel != null && rootPanel.transform.IsChildOf(inventoryBackgroundPanel.transform))
+			{
+				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
+			}
+			else if (inventoryBackgroundPanel != null && rootPanel == null)
 			{
 				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
 			}
