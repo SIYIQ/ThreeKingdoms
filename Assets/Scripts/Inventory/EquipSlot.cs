@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class EquipSlot : MonoBehaviour
+public class EquipSlot : MonoBehaviour, IDropHandler, IPointerClickHandler
 {
     public ItemType allowedType;
     public Image icon;
     public Sprite emptySprite;
+    public InventoryUI inventoryUI;
 
     public ItemData CurrentItem { get; private set; }
 
@@ -21,7 +23,35 @@ public class EquipSlot : MonoBehaviour
 
     public void Clear()
     {
+        // return to inventory if possible
+        if (CurrentItem != null && inventoryUI != null)
+        {
+            inventoryUI.AddItemToInventory(CurrentItem);
+        }
         SetItem(null);
+    }
+
+    // Handle drop from InventorySlot
+    public void OnDrop(PointerEventData eventData)
+    {
+        var from = DragDropManager.CurrentDraggedSlot;
+        if (from == null) return;
+        if (from.Item == null) return;
+        if (from.Item.itemType != allowedType && !(allowedType == ItemType.Consumable && from.Item.itemType == ItemType.Consumable)) return;
+
+        // Equip to this slot
+        SetItem(from.Item);
+        from.SetItem(null);
+        DragDropManager.Clear();
+    }
+
+    // Right-click to unequip
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            Clear();
+        }
     }
 }
 

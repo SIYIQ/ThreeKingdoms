@@ -39,6 +39,15 @@ public class InventoryUI : MonoBehaviour
         CreateGridSlots();
         if (tabEquipButton != null) tabEquipButton.onClick.AddListener(() => SwitchTab(Tab.Equipment));
         if (tabConsumableButton != null) tabConsumableButton.onClick.AddListener(() => SwitchTab(Tab.Consumables));
+        // Attempt to load persistent ItemData assets from Resources if none assigned
+        if ((inventoryItems == null || inventoryItems.Count == 0))
+        {
+            var loaded = Resources.LoadAll<ItemData>("Inventory/Items");
+            if (loaded != null && loaded.Length > 0)
+            {
+                inventoryItems = new List<ItemData>(loaded);
+            }
+        }
         RefreshGrid();
     }
 
@@ -122,6 +131,72 @@ public class InventoryUI : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    // Show a simple popup letting player choose which equip slot to place the item into.
+    // For simplicity the popup is created at runtime under the inventoryRoot.
+    public void ShowEquipChoiceDialog(ItemData item, InventorySlot fromSlot)
+    {
+        if (inventoryRoot == null) return;
+        // Remove any existing dialog
+        Transform existing = inventoryRoot.transform.Find("EquipChoiceDialog");
+        if (existing != null) Destroy(existing.gameObject);
+
+        GameObject panel = new GameObject("EquipChoiceDialog");
+        panel.transform.SetParent(inventoryRoot.transform, false);
+        RectTransform prt = panel.AddComponent<RectTransform>();
+        prt.anchorMin = new Vector2(0.4f, 0.4f);
+        prt.anchorMax = new Vector2(0.6f, 0.6f);
+        Image bg = panel.AddComponent<Image>();
+        bg.color = new Color(0.95f, 0.95f, 0.85f);
+
+        VerticalLayoutGroup vl = panel.AddComponent<VerticalLayoutGroup>();
+        vl.spacing = 6f;
+        vl.childForceExpandHeight = false;
+
+        // Create buttons for valid targets
+        if (item.itemType == ItemType.Weapon && weaponSlot != null)
+            CreateDialogButton(panel.transform, "Equip to Weapon", () => { EquipItemToSlot(item, weaponSlot, fromSlot); Destroy(panel); });
+        if (item.itemType == ItemType.Gear && gearSlot != null)
+            CreateDialogButton(panel.transform, "Equip to Gear", () => { EquipItemToSlot(item, gearSlot, fromSlot); Destroy(panel); });
+        if (item.itemType == ItemType.Consumable)
+        {
+            if (consumableSlotA != null) CreateDialogButton(panel.transform, "Equip to Consumable A", () => { EquipItemToSlot(item, consumableSlotA, fromSlot); Destroy(panel); });
+            if (consumableSlotB != null) CreateDialogButton(panel.transform, "Equip to Consumable B", () => { EquipItemToSlot(item, consumableSlotB, fromSlot); Destroy(panel); });
+        }
+
+        CreateDialogButton(panel.transform, "Cancel", () => { Destroy(panel); });
+    }
+
+    void CreateDialogButton(Transform parent, string text, System.Action onClick)
+    {
+        GameObject go = new GameObject("Btn_" + text);
+        go.transform.SetParent(parent, false);
+        Image img = go.AddComponent<Image>();
+        img.color = new Color(0.8f, 0.8f, 0.8f);
+        Button btn = go.AddComponent<Button>();
+        btn.onClick.AddListener(() => onClick());
+        GameObject txt = new GameObject("Text");
+        txt.transform.SetParent(go.transform, false);
+        Text t = txt.AddComponent<Text>();
+        t.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        t.text = text;
+        t.alignment = TextAnchor.MiddleCenter;
+        t.color = Color.black;
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(200f, 28f);
+    }
+
+    // Equip an item into a specific equip slot (and remove from origin slot if provided)
+    public void EquipItemToSlot(ItemData item, EquipSlot targetSlot, InventorySlot fromSlot = null)
+    {
+        if (item == null || targetSlot == null) return;
+        targetSlot.SetItem(item);
+        if (fromSlot != null)
+            fromSlot.SetItem(null);
+        else
+            inventoryItems.Remove(item);
+        RefreshGrid();
     }
 
     void SwitchTab(Tab t)
