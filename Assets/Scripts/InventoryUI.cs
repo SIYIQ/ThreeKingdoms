@@ -314,14 +314,40 @@ public class InventoryUI : MonoBehaviour
 
 	private void EnsureInventoryBackgroundExists()
 	{
+		// If already assigned via Inspector, keep it.
 		if (inventoryBackgroundPanel != null) return;
-		// Prefer to wrap rootPanel if available, otherwise wrap itemGridParent
+
+		// Prefer to wrap rootPanel if available, otherwise wrap itemGridParent (used later if we create a wrapper)
 		Transform toWrap = null;
 		if (rootPanel != null) toWrap = rootPanel.transform;
 		else if (itemGridParent != null) toWrap = itemGridParent;
-		if (toWrap == null) return;
 
-		// 如果场景中已有名为 InventoryBackground 的对象，则复用
+		// 1) Try to find a scene object that has the InventoryBackground component (auto-detect)
+		var foundComp = FindObjectOfType<InventoryBackground>();
+		if (foundComp != null)
+		{
+			inventoryBackgroundPanel = foundComp.gameObject;
+			// If we found a component but the intended content (toWrap) isn't a child, parent it under the found bg.
+			if (toWrap != null && !toWrap.IsChildOf(inventoryBackgroundPanel.transform))
+			{
+				toWrap.SetParent(inventoryBackgroundPanel.transform, false);
+			}
+			// Ensure active state mirrors rootPanel if binding requested
+			if (bindBackgroundToRoot && rootPanel != null)
+			{
+				inventoryBackgroundPanel.SetActive(rootPanel.activeSelf);
+			}
+			// if gridBackground not set, try to find a child named "GridBackground" under the found object
+			if (gridBackground == null)
+			{
+				var found = inventoryBackgroundPanel.transform.Find("GridBackground");
+				if (found != null) gridBackground = found.GetComponent<RectTransform>();
+			}
+			return;
+		}
+
+		// 2) If no InventoryBackground component exists, try to find a GameObject named "InventoryBackground"
+		// (keeps backwards compatibility with existing scenes)
 		var existing = GameObject.Find("InventoryBackground");
 		if (existing != null)
 		{
@@ -329,17 +355,14 @@ public class InventoryUI : MonoBehaviour
 		}
 		else
 		{
+			// 3) Otherwise create an empty wrapper (no opaque Image added here)
+			if (toWrap == null) return;
 			var bg = new GameObject("InventoryBackground");
 			var rt = bg.AddComponent<RectTransform>();
 			// make it stretch to parent canvas
 			rt.anchorMin = Vector2.zero;
 			rt.anchorMax = Vector2.one;
 			rt.sizeDelta = Vector2.zero;
-			// Do NOT add an opaque full-screen Image here by default — the project already
-			// contains child background elements (smaller black panels). Leaving the created
-			// wrapper without an Image prevents the unwanted gray overlay when toggling.
-			// If a visible background is desired, add an Image manually in the Editor or
-			// provide a child named "GridBackground" (the code will pick that up below).
 			inventoryBackgroundPanel = bg;
 		}
 
@@ -347,16 +370,17 @@ public class InventoryUI : MonoBehaviour
 		var invBgRt = inventoryBackgroundPanel.GetComponent<RectTransform>();
 		if (invBgRt == null) invBgRt = inventoryBackgroundPanel.AddComponent<RectTransform>();
 
-		// Preserve old parent
+		// Preserve old parent and reparent
 		var oldParent = toWrap.parent;
 		inventoryBackgroundPanel.transform.SetParent(oldParent, false);
-		// Move the target under our background
 		toWrap.SetParent(inventoryBackgroundPanel.transform, false);
+
 		// Ensure active state mirrors rootPanel if binding requested
 		if (bindBackgroundToRoot && rootPanel != null)
 		{
 			inventoryBackgroundPanel.SetActive(rootPanel.activeSelf);
 		}
+
 		// if gridBackground not set, try to find a child named "GridBackground" under the new parent
 		if (gridBackground == null)
 		{
