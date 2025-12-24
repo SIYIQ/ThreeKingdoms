@@ -27,6 +27,10 @@ public class InventoryManager : MonoBehaviour
 	public int currentHP;
 	public int currentMP;
 
+	[Header("Runtime options")]
+	// 如果为 true，进入 Play 时会清空已在 Inspector 中设置的装备，确保初始为“空槽”
+	public bool clearEquipmentOnStart = true;
+
 	// 事件：背包或装备变化，UI 可订阅刷新
 	public event Action OnInventoryChanged;
 	public event Action OnStatsChanged;
@@ -44,6 +48,18 @@ public class InventoryManager : MonoBehaviour
 	}
 	private void Start()
 	{
+		// 可选：在开始时清空装备（方便测试/确保空槽）
+		if (clearEquipmentOnStart)
+		{
+			weaponSlot = null;
+			clothingSlot = null;
+			if (extraEquipSlots == null || extraEquipSlots.Length != 4) extraEquipSlots = new Item[4];
+			else
+			{
+				for (int i = 0; i < extraEquipSlots.Length; i++) extraEquipSlots[i] = null;
+			}
+		}
+
 		// 初始化当前血蓝为总量
 		currentHP = GetTotalHP();
 		currentMP = GetTotalMP();

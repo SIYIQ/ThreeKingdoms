@@ -52,6 +52,7 @@ public class InventoryUI : MonoBehaviour
 
 	private void OnEnable()
 	{
+		EnsureInventoryBackgroundExists();
 		if (InventoryManager.Instance != null)
 		{
 			InventoryManager.Instance.OnInventoryChanged += RefreshInventoryGrid;
@@ -304,6 +305,51 @@ public class InventoryUI : MonoBehaviour
 		tooltipGO.SetActive(false);
 	}
 
+	private void EnsureInventoryBackgroundExists()
+	{
+		if (inventoryBackgroundPanel != null) return;
+		// Prefer to wrap rootPanel if available, otherwise wrap itemGridParent
+		Transform toWrap = null;
+		if (rootPanel != null) toWrap = rootPanel.transform;
+		else if (itemGridParent != null) toWrap = itemGridParent;
+		if (toWrap == null) return;
+
+		// 如果场景中已有名为 InventoryBackground 的对象，则复用
+		var existing = GameObject.Find("InventoryBackground");
+		if (existing != null)
+		{
+			inventoryBackgroundPanel = existing;
+		}
+		else
+		{
+			var bg = new GameObject("InventoryBackground");
+			var rt = bg.AddComponent<RectTransform>();
+			// make it stretch to parent canvas
+			rt.anchorMin = Vector2.zero;
+			rt.anchorMax = Vector2.one;
+			rt.sizeDelta = Vector2.zero;
+			var img = bg.AddComponent<Image>();
+			img.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+			inventoryBackgroundPanel = bg;
+		}
+
+		// Insert inventoryBackgroundPanel into hierarchy: make it parent of toWrap
+		var invBgRt = inventoryBackgroundPanel.GetComponent<RectTransform>();
+		if (invBgRt == null) invBgRt = inventoryBackgroundPanel.AddComponent<RectTransform>();
+
+		// Preserve old parent
+		var oldParent = toWrap.parent;
+		inventoryBackgroundPanel.transform.SetParent(oldParent, false);
+		// Move the target under our background
+		toWrap.SetParent(inventoryBackgroundPanel.transform, false);
+		// if gridBackground not set, try to find a child named "GridBackground" under the new parent
+		if (gridBackground == null)
+		{
+			var found = inventoryBackgroundPanel.transform.Find("GridBackground");
+			if (found != null) gridBackground = found.GetComponent<RectTransform>();
+		}
+	}
+
 	public void ShowTooltip(string text)
 	{
 		EnsureTooltipExists();
@@ -467,6 +513,14 @@ public class InventoryUI : MonoBehaviour
 
 		EditorUtility.SetDirty(this);
 		Debug.Log("[InventoryUI] AutoAssignDefaultSpritesEditor finished; please check Inspector for assigned sprites.");
+	}
+#endif
+
+#if UNITY_EDITOR
+	private void OnValidate()
+	{
+		// 在编辑器中尽量自动分配贴图，减少手动操作
+		AutoAssignDefaultSpritesEditor();
 	}
 #endif
 }
