@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine.UI;
 
 // 负责把 InventoryManager 的数据渲染到屏幕上（简单示例）
@@ -11,7 +14,9 @@ public class InventoryUI : MonoBehaviour
 	[Header("装备槽")]
 	public Image weaponSlotImage;
 	public Image clothingSlotImage;
-	public Image[] extraEquipSlotImages = new Image[2];
+	public Image[] extraEquipSlotImages = new Image[4];
+	[Header("默认装备槽贴图（空槽时按索引显示）")]
+	public Sprite[] defaultEquipSlotSprites = new Sprite[4];
 
 	[Header("背包网格")]
 	public Transform itemGridParent;
@@ -39,6 +44,11 @@ public class InventoryUI : MonoBehaviour
 	private GameObject tooltipGO;
 	private Text tooltipText;
 	private int selectedIndex = -1;
+	// track screen size to detect resize
+	private Vector2 lastScreenSize = Vector2.zero;
+	[Header("可选背景与容器")]
+	public RectTransform gridBackground; // 浅色底板（右侧）可指定用于同步大小
+	public GameObject inventoryBackgroundPanel; // 整体背包底板（所有元素放在该对象下并通过 I 键切换）
 
 	private void OnEnable()
 	{
@@ -80,18 +90,27 @@ public class InventoryUI : MonoBehaviour
 		{
 			var slotImg = extraEquipSlotImages[i];
 			var item = (i < mgr.extraEquipSlots.Length) ? mgr.extraEquipSlots[i] : null;
-			SetImage(slotImg, item);
+			SetImage(slotImg, item, i);
 		}
 	}
 
-	private void SetImage(Image img, Item item)
+	private void SetImage(Image img, Item item, int defaultSpriteIndex = -1)
 	{
 		if (img == null) return;
 		if (item == null)
 		{
-			// 显示默认灰色底表示空装备槽
-			img.sprite = null;
-			img.color = new Color(0.25f, 0.25f, 0.25f, 1f);
+			// 如果指定了默认贴图数组且索引有效，使用默认贴图
+			if (defaultSpriteIndex >= 0 && defaultEquipSlotSprites != null && defaultSpriteIndex < defaultEquipSlotSprites.Length && defaultEquipSlotSprites[defaultSpriteIndex] != null)
+			{
+				img.sprite = defaultEquipSlotSprites[defaultSpriteIndex];
+				img.color = Color.white;
+			}
+			else
+			{
+				// 显示默认灰色底表示空装备槽
+				img.sprite = null;
+				img.color = new Color(0.25f, 0.25f, 0.25f, 1f);
+			}
 		}
 		else
 		{
@@ -245,6 +264,16 @@ public class InventoryUI : MonoBehaviour
 				if (btn != null) btn.onClick.RemoveAllListeners();
 			}
 		}
+		// 同步 grid 背景大小（若存在）
+		if (gridBackground != null && itemGridParent != null)
+		{
+			var gridRt = itemGridParent.GetComponent<RectTransform>();
+			if (gridRt != null)
+			{
+				// 将背景高度/宽度与网格父对象匹配（保持锚点不变）
+				gridBackground.sizeDelta = new Vector2(gridRt.rect.width, gridRt.rect.height);
+			}
+		}
 	}
 
 	private void EnsureTooltipExists()
@@ -354,6 +383,92 @@ public class InventoryUI : MonoBehaviour
 		}
 		if (attackText != null) attackText.text = $"ATK: {mgr.GetTotalAttack()}";
 	}
+	private void Update()
+	{
+		// 切换整体背包面板（按 I）
+		if (Input.GetKeyDown(KeyCode.I))
+		{
+			if (inventoryBackgroundPanel != null)
+			{
+				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
+			}
+			else if (rootPanel != null)
+			{
+				rootPanel.SetActive(!rootPanel.activeSelf);
+			}
+		}
+
+		// 检测窗口尺寸变化并在变化时刷新网格与背景（简单实现）
+		Vector2 screenSize = new Vector2(Screen.width, Screen.height);
+		if (screenSize != lastScreenSize)
+		{
+			lastScreenSize = screenSize;
+			RefreshInventoryGrid();
+		}
+	}
+
+#if UNITY_EDITOR
+	[ContextMenu("Auto Assign Default Equip Sprites")]
+	private void AutoAssignDefaultSpritesEditor()
+	{
+		// 搜索 Assets/Textures 下的所有 Texture2D，尝试把它们作为 Sprite 赋给 defaultEquipSlotSprites
+		string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Textures" });
+		List<Sprite> found = new List<Sprite>();
+		foreach (var g in guids)
+		{
+			string path = AssetDatabase.GUIDToAssetPath(g);
+			if (string.IsNullOrEmpty(path)) continue;
+			var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+			if (sprite != null) found.Add(sprite);
+			else
+			{
+				// 有些贴图可能被导为 Texture 类型而非 Sprite，尝试以 Texture2D 载入并转换（仅可在编辑器中）
+				var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+				if (tex != null)
+				{
+					// 如果 Texture 被导为 SpriteSheet，则上面已经捕获；这里只作安全回退不做创建新 Sprite
+				}
+			}
+		}
+
+		if (defaultEquipSlotSprites == null || defaultEquipSlotSprites.Length < 4) defaultEquipSlotSprites = new Sprite[4];
+
+		// 简单通过文件名关键字匹配，尽量把常见名字放到合适位置
+		foreach (var s in found)
+		{
+			string n = s.name.ToLower();
+			if (n.Contains("arms") || n.Contains("weapon") || n.Contains("arm"))
+			{
+				defaultEquipSlotSprites[0] = s;
+				continue;
+			}
+			if (n.Contains("clothes") || n.Contains("cloth") || n.Contains("clothing"))
+			{
+				defaultEquipSlotSprites[1] = s;
+				continue;
+			}
+			if (n.Contains("blue") || n.Contains("potion") || n.Contains("consumable"))
+			{
+				defaultEquipSlotSprites[2] = s;
+				continue;
+			}
+			if (n.Contains("red") || n.Contains("misc") || n.Contains("character"))
+			{
+				defaultEquipSlotSprites[3] = s;
+				continue;
+			}
+		}
+
+		// 回退填充：如果某些槽仍为空，使用找到的第一个贴图填充
+		for (int i = 0; i < defaultEquipSlotSprites.Length; i++)
+		{
+			if (defaultEquipSlotSprites[i] == null && found.Count > 0) defaultEquipSlotSprites[i] = found[0];
+		}
+
+		EditorUtility.SetDirty(this);
+		Debug.Log("[InventoryUI] AutoAssignDefaultSpritesEditor finished; please check Inspector for assigned sprites.");
+	}
+#endif
 }
 
 

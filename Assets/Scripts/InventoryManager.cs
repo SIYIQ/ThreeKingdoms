@@ -14,7 +14,7 @@ public class InventoryManager : MonoBehaviour
 	[Header("装备栏（示例：武器、衣服、道具1、道具2）")]
 	public Item weaponSlot;
 	public Item clothingSlot;
-	public Item[] extraEquipSlots = new Item[2];
+	public Item[] extraEquipSlots = new Item[4];
 
 	[Header("角色基础属性")]
 	public int baseHP = 100;
