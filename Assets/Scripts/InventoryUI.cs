@@ -431,16 +431,17 @@ public class InventoryUI : MonoBehaviour
 	}
 	private void Update()
 	{
-		// 切换整体背包面板（按 I）——优先切换 rootPanel，避免误把更上层的 Canvas/父级隐藏
+		// 切换整体背包面板（按 I）
+		// 优先切换 inventoryBackgroundPanel（如果存在），避免只切换 child 导致 parent 背景残留造成灰色遮挡
 		if (Input.GetKeyDown(KeyCode.I))
 		{
-			if (rootPanel != null)
-			{
-				rootPanel.SetActive(!rootPanel.activeSelf);
-			}
-			else if (inventoryBackgroundPanel != null)
+			if (inventoryBackgroundPanel != null)
 			{
 				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
+			}
+			else if (rootPanel != null)
+			{
+				rootPanel.SetActive(!rootPanel.activeSelf);
 			}
 		}
 
