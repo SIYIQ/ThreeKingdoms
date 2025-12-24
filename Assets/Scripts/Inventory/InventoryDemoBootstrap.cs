@@ -56,11 +56,12 @@ public class InventoryDemoBootstrap : MonoBehaviour
         leftRt.offsetMin = new Vector2(10f, 10f);
         leftRt.offsetMax = new Vector2(-10f, -10f);
 
-        // Portrait image (top-left)
+        // Portrait image (top-left) — make taller and narrower
         GameObject portraitGO = CreateUIObject("Portrait", leftArea.transform);
         RectTransform portraitRt = portraitGO.AddComponent<RectTransform>();
-        portraitRt.anchorMin = new Vector2(0f, 0.55f);
-        portraitRt.anchorMax = new Vector2(0.6f, 1f);
+        // narrower (x up to 0.45) and slightly taller (start at 0.6)
+        portraitRt.anchorMin = new Vector2(0f, 0.6f);
+        portraitRt.anchorMax = new Vector2(0.45f, 1f);
         portraitRt.offsetMin = new Vector2(10f, -10f);
         portraitRt.offsetMax = new Vector2(-10f, -10f);
         Image portraitImage = portraitGO.AddComponent<Image>();
@@ -77,7 +78,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         GridLayoutGroup equipLayout = equipGrid.AddComponent<GridLayoutGroup>();
         equipLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         equipLayout.constraintCount = 2;
-        equipLayout.cellSize = new Vector2(64f, 64f);
+        equipLayout.cellSize = new Vector2(96f, 96f);
         equipLayout.spacing = new Vector2(8f, 8f);
 
         // Create 4 EquipSlot objects and assign to inventoryUI
@@ -142,38 +143,45 @@ public class InventoryDemoBootstrap : MonoBehaviour
         gridLayout.constraintCount = 5;
         inventoryUI.gridParent = gridArea.transform;
 
-        // Create a simple slot prefab GameObject at runtime
-        GameObject slotPrefab = CreateSlotPrefab();
-        inventoryUI.slotPrefab = slotPrefab;
+        // Try to load a saved slot prefab from Resources/Inventory/Prefabs first; fall back to runtime creation
+        GameObject loadedSlotPrefab = Resources.Load<GameObject>("Inventory/Prefabs/SlotPrefab");
+        if (loadedSlotPrefab != null)
+        {
+            inventoryUI.slotPrefab = loadedSlotPrefab;
+        }
+        else
+        {
+            GameObject slotPrefab = CreateSlotPrefab();
+            inventoryUI.slotPrefab = slotPrefab;
+        }
         inventoryUI.gridSlotCount = 20;
         inventoryUI.emptySlotSprite = GenerateColoredSprite(Color.grey);
 
-        // Populate runtime items (ScriptableObject instances in memory)
-        var sword = ScriptableObject.CreateInstance<ItemData>();
-        sword.itemName = "Sword";
-        sword.itemType = ItemType.Weapon;
-        sword.icon = GenerateColoredSprite(new Color(0.2f, 0.6f, 1f));
-
-        var armor = ScriptableObject.CreateInstance<ItemData>();
-        armor.itemName = "Armor";
-        armor.itemType = ItemType.Gear;
-        armor.icon = GenerateColoredSprite(new Color(1f, 0.6f, 0.2f));
-
-        var potion = ScriptableObject.CreateInstance<ItemData>();
-        potion.itemName = "Potion";
-        potion.itemType = ItemType.Consumable;
-        potion.icon = GenerateColoredSprite(new Color(0.2f, 1f, 0.4f));
-
-        // Add several items to inventory to test pagination
-        inventoryUI.AddItemToInventory(sword);
-        inventoryUI.AddItemToInventory(armor);
-        for (int i = 0; i < 8; i++)
+        // Populate runtime items only if no persistent ItemData assets exist in Resources
+        var persistent = Resources.LoadAll<ItemData>("Inventory/Items");
+        if (persistent == null || persistent.Length == 0)
         {
-            var p = ScriptableObject.CreateInstance<ItemData>();
-            p.itemName = "Potion " + (i + 1);
-            p.itemType = ItemType.Consumable;
-            p.icon = GenerateColoredSprite(new Color(0.6f, 0.6f, 0.6f));
-            inventoryUI.AddItemToInventory(p);
+            var sword = ScriptableObject.CreateInstance<ItemData>();
+            sword.itemName = "Sword";
+            sword.itemType = ItemType.Weapon;
+            sword.icon = GenerateColoredSprite(new Color(0.2f, 0.6f, 1f));
+
+            var armor = ScriptableObject.CreateInstance<ItemData>();
+            armor.itemName = "Armor";
+            armor.itemType = ItemType.Gear;
+            armor.icon = GenerateColoredSprite(new Color(1f, 0.6f, 0.2f));
+
+            // Add several items to inventory to test pagination
+            inventoryUI.AddItemToInventory(sword);
+            inventoryUI.AddItemToInventory(armor);
+            for (int i = 0; i < 8; i++)
+            {
+                var p = ScriptableObject.CreateInstance<ItemData>();
+                p.itemName = "Potion " + (i + 1);
+                p.itemType = ItemType.Consumable;
+                p.icon = GenerateColoredSprite(new Color(0.6f, 0.6f, 0.6f));
+                inventoryUI.AddItemToInventory(p);
+            }
         }
 
         // Keep inventory hidden initially
@@ -224,18 +232,34 @@ public class InventoryDemoBootstrap : MonoBehaviour
     StatusBar CreateStatusBar(Transform parent, string label, Color fillColor)
     {
         GameObject go = CreateUIObject(label + "Bar", parent);
+        RectTransform goRt = go.AddComponent<RectTransform>();
+        goRt.sizeDelta = new Vector2(360f, 36f);
         HorizontalLayoutGroup hl = go.AddComponent<HorizontalLayoutGroup>();
         hl.spacing = 8f;
+        hl.childForceExpandWidth = false;
+        hl.childControlWidth = false;
+
         GameObject labelGO = CreateUIObject("Label", go.transform);
+        RectTransform labelRt = labelGO.AddComponent<RectTransform>();
+        labelRt.sizeDelta = new Vector2(80f, 28f);
         Text t = labelGO.AddComponent<Text>();
         t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         t.text = label;
         t.color = Color.white;
+
         RectTransform fillRt = CreateUIObject("Fill", go.transform).AddComponent<RectTransform>();
+        fillRt.sizeDelta = new Vector2(260f, 28f);
         Image fill = fillRt.gameObject.AddComponent<Image>();
         fill.color = fillColor;
         fill.type = Image.Type.Filled;
         fill.fillMethod = Image.FillMethod.Horizontal;
+
+        // Add LayoutElement so HorizontalLayoutGroup respects sizes
+        var leLabel = labelGO.AddComponent<LayoutElement>();
+        leLabel.preferredWidth = 80f;
+        var leFill = fillRt.gameObject.AddComponent<LayoutElement>();
+        leFill.preferredWidth = 260f;
+
         StatusBar sb = go.AddComponent<StatusBar>();
         sb.fillImage = fill;
         sb.labelText = t;
@@ -255,7 +279,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         t.alignment = TextAnchor.MiddleCenter;
         t.color = Color.black;
         RectTransform rt = go.GetComponent<RectTransform>();
-        rt.sizeDelta = new Vector2(120f, 28f);
+        rt.sizeDelta = new Vector2(90f, 28f);
         return btn;
     }
 
