@@ -431,16 +431,16 @@ public class InventoryUI : MonoBehaviour
 	}
 	private void Update()
 	{
-		// 切换整体背包面板（按 I）
+		// 切换整体背包面板（按 I）——优先切换 rootPanel，避免误把更上层的 Canvas/父级隐藏
 		if (Input.GetKeyDown(KeyCode.I))
 		{
-			if (inventoryBackgroundPanel != null)
-			{
-				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
-			}
-			else if (rootPanel != null)
+			if (rootPanel != null)
 			{
 				rootPanel.SetActive(!rootPanel.activeSelf);
+			}
+			else if (inventoryBackgroundPanel != null)
+			{
+				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
 			}
 		}
 
@@ -457,29 +457,38 @@ public class InventoryUI : MonoBehaviour
 	[ContextMenu("Auto Assign Default Equip Sprites")]
 	private void AutoAssignDefaultSpritesEditor()
 	{
-		// 搜索 Assets/Textures 下的所有 Texture2D，尝试把它们作为 Sprite 赋给 defaultEquipSlotSprites
-		string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Textures" });
+		// 搜索 Assets/Textures 下的所有文件，尽量把它们以 Sprite 的形式分配到 defaultEquipSlotSprites
+		string[] guids = AssetDatabase.FindAssets("", new[] { "Assets/Textures" });
 		List<Sprite> found = new List<Sprite>();
 		foreach (var g in guids)
 		{
 			string path = AssetDatabase.GUIDToAssetPath(g);
 			if (string.IsNullOrEmpty(path)) continue;
+			// 先尝试以 Sprite 加载
 			var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-			if (sprite != null) found.Add(sprite);
-			else
+			if (sprite != null)
 			{
-				// 有些贴图可能被导为 Texture 类型而非 Sprite，尝试以 Texture2D 载入并转换（仅可在编辑器中）
-				var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-				if (tex != null)
-				{
-					// 如果 Texture 被导为 SpriteSheet，则上面已经捕获；这里只作安全回退不做创建新 Sprite
-				}
+				found.Add(sprite);
+				continue;
 			}
+			// 若不是 Sprite，尝试把 Texture 的导入器设置为 Sprite 并重新导入后再加载
+			var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+			if (tex == null) continue;
+			var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+			if (importer != null && importer.textureType != TextureImporterType.Sprite)
+			{
+				importer.textureType = TextureImporterType.Sprite;
+				importer.SaveAndReimport();
+			}
+			// 重新尝试加载为 Sprite（有时需要 AssetDatabase 刷新）
+			AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+			sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+			if (sprite != null) found.Add(sprite);
 		}
 
 		if (defaultEquipSlotSprites == null || defaultEquipSlotSprites.Length < 4) defaultEquipSlotSprites = new Sprite[4];
 
-		// 简单通过文件名关键字匹配，尽量把常见名字放到合适位置
+		// 精确匹配文件名（更严格规则），优先使用确切关键字
 		foreach (var s in found)
 		{
 			string n = s.name.ToLower();
@@ -493,26 +502,31 @@ public class InventoryUI : MonoBehaviour
 				defaultEquipSlotSprites[1] = s;
 				continue;
 			}
-			if (n.Contains("blue") || n.Contains("potion") || n.Contains("consumable"))
+			if (n.Contains("potion") || n.Contains("hp") || n.Contains("consume") || n.Contains("consumable"))
 			{
 				defaultEquipSlotSprites[2] = s;
 				continue;
 			}
-			if (n.Contains("red") || n.Contains("misc") || n.Contains("character"))
+			if (n.Contains("misc") || n.Contains("character") || n.Contains("misc1") || n.Contains("misc2") || n.Contains("red"))
 			{
 				defaultEquipSlotSprites[3] = s;
 				continue;
 			}
 		}
 
-		// 回退填充：如果某些槽仍为空，使用找到的第一个贴图填充
+		// 回退填充：如果某些槽仍为空，按顺序用找到的贴图填充
+		int idx = 0;
 		for (int i = 0; i < defaultEquipSlotSprites.Length; i++)
 		{
-			if (defaultEquipSlotSprites[i] == null && found.Count > 0) defaultEquipSlotSprites[i] = found[0];
+			if (defaultEquipSlotSprites[i] == null)
+			{
+				while (idx < found.Count && found[idx] == null) idx++;
+				if (idx < found.Count) defaultEquipSlotSprites[i] = found[idx++];
+			}
 		}
 
 		EditorUtility.SetDirty(this);
-		Debug.Log("[InventoryUI] AutoAssignDefaultSpritesEditor finished; please check Inspector for assigned sprites.");
+		Debug.Log($"[InventoryUI] AutoAssignDefaultSpritesEditor finished; assigned {found.Count} textures (check Inspector).");
 	}
 #endif
 
