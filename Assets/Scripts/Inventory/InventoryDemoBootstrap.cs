@@ -35,7 +35,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         }
 
         // Create InventoryRoot panel
-        GameObject inventoryRoot = CreateUIObject("InventoryRoot", canvas.transform);
+        inventoryRoot = CreateUIObject("InventoryRoot", canvas.transform);
         RectTransform invRt = inventoryRoot.AddComponent<RectTransform>();
         Image invImage = inventoryRoot.AddComponent<Image>();
         invImage.color = new Color(0.15f, 0.15f, 0.15f, 0.95f);
