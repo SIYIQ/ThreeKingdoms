@@ -6,6 +6,9 @@ using UnityEngine.UI;
 // Attach this script to an empty GameObject in a new Scene, press Play to see the UI and test with I key.
 public class InventoryDemoBootstrap : MonoBehaviour
 {
+    GameObject inventoryRoot;
+    InventoryUI inventoryUI;
+
     void Awake()
     {
         // Ensure there's a Camera (Game view shows "No cameras rendering" if none present)
@@ -42,7 +45,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         invRt.offsetMax = new Vector2(-10f, -10f);
 
         // Add InventoryUI component
-        InventoryUI inventoryUI = inventoryRoot.AddComponent<InventoryUI>();
+        inventoryUI = inventoryRoot.AddComponent<InventoryUI>();
         inventoryUI.inventoryRoot = inventoryRoot;
 
         // Left area - portrait and equip grid
@@ -175,6 +178,17 @@ public class InventoryDemoBootstrap : MonoBehaviour
 
         // Keep inventory hidden initially
         inventoryRoot.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.I) && inventoryRoot != null)
+        {
+            bool show = !inventoryRoot.activeSelf;
+            inventoryRoot.SetActive(show);
+            if (show && inventoryUI != null)
+                inventoryUI.RefreshGrid();
+        }
     }
 
     // -- Helper builders --
