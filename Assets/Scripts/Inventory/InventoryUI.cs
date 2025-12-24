@@ -179,7 +179,8 @@ public class InventoryUI : MonoBehaviour
         GameObject txt = new GameObject("Text");
         txt.transform.SetParent(go.transform, false);
         Text t = txt.AddComponent<Text>();
-        t.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        // Use LegacyRuntime.ttf for compatibility across Unity versions
+        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         t.text = text;
         t.alignment = TextAnchor.MiddleCenter;
         t.color = Color.black;

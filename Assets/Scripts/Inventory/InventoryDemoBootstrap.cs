@@ -228,7 +228,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         hl.spacing = 8f;
         GameObject labelGO = CreateUIObject("Label", go.transform);
         Text t = labelGO.AddComponent<Text>();
-        t.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         t.text = label;
         t.color = Color.white;
         RectTransform fillRt = CreateUIObject("Fill", go.transform).AddComponent<RectTransform>();
@@ -250,7 +250,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         Button btn = go.AddComponent<Button>();
         GameObject txt = CreateUIObject("Text", go.transform);
         Text t = txt.AddComponent<Text>();
-        t.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         t.text = text;
         t.alignment = TextAnchor.MiddleCenter;
         t.color = Color.black;
