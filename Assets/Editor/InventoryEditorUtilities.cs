@@ -167,10 +167,10 @@ public static class InventoryEditorUtilities
         // Status bars area
         GameObject statusArea = new GameObject("StatusArea");
         statusArea.transform.SetParent(left.transform, false);
-        // Create HP/MP/EXP bars
+        // Create HP/MP/ATK bars
         CreateStatusBarForPrefab(statusArea.transform, "HP", sprites, invUI);
         CreateStatusBarForPrefab(statusArea.transform, "MP", sprites, invUI);
-        CreateStatusBarForPrefab(statusArea.transform, "EXP", sprites, invUI);
+        CreateStatusBarForPrefab(statusArea.transform, "ATK", sprites, invUI);
 
         // Right area with tabs and grid
         GameObject right = new GameObject("RightArea");

@@ -91,7 +91,8 @@ public class InventoryDemoBootstrap : MonoBehaviour
         GameObject statusArea = CreateUIObject("StatusArea", leftArea.transform);
         RectTransform statusRt = statusArea.AddComponent<RectTransform>();
         statusRt.anchorMin = new Vector2(0f, 0f);
-        statusRt.anchorMax = new Vector2(1f, 0.55f);
+        // moved down to free more vertical space for taller portrait
+        statusRt.anchorMax = new Vector2(1f, 0.45f);
         statusRt.offsetMin = new Vector2(10f, 10f);
         statusRt.offsetMax = new Vector2(-10f, -10f);
         VerticalLayoutGroup statusLayout = statusArea.AddComponent<VerticalLayoutGroup>();
@@ -102,7 +103,7 @@ public class InventoryDemoBootstrap : MonoBehaviour
         // HP, MP, EXP bars
         StatusBar hp = CreateStatusBar(statusArea.transform, "HP", Color.red);
         StatusBar mp = CreateStatusBar(statusArea.transform, "MP", Color.cyan);
-        StatusBar exp = CreateStatusBar(statusArea.transform, "EXP", new Color(1f, 0.85f, 0f));
+        StatusBar atk = CreateStatusBar(statusArea.transform, "ATK", new Color(1f, 0.85f, 0f));
 
         hp.SetValue(80f, 100f);
         mp.SetValue(40f, 100f);
@@ -236,24 +237,26 @@ public class InventoryDemoBootstrap : MonoBehaviour
 
     StatusBar CreateStatusBar(Transform parent, string label, Color fillColor)
     {
+        // Slightly narrower and shorter bars to make portrait taller
         GameObject go = CreateUIObject(label + "Bar", parent);
         RectTransform goRt = go.AddComponent<RectTransform>();
-        goRt.sizeDelta = new Vector2(360f, 36f);
+        goRt.sizeDelta = new Vector2(320f, 24f);
         HorizontalLayoutGroup hl = go.AddComponent<HorizontalLayoutGroup>();
-        hl.spacing = 8f;
+        hl.spacing = 6f;
         hl.childForceExpandWidth = false;
         hl.childControlWidth = false;
 
         GameObject labelGO = CreateUIObject("Label", go.transform);
         RectTransform labelRt = labelGO.AddComponent<RectTransform>();
-        labelRt.sizeDelta = new Vector2(80f, 28f);
+        labelRt.sizeDelta = new Vector2(64f, 20f);
         Text t = labelGO.AddComponent<Text>();
         t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         t.text = label;
         t.color = Color.white;
+        t.alignment = TextAnchor.MiddleLeft;
 
         RectTransform fillRt = CreateUIObject("Fill", go.transform).AddComponent<RectTransform>();
-        fillRt.sizeDelta = new Vector2(260f, 28f);
+        fillRt.sizeDelta = new Vector2(240f, 20f);
         Image fill = fillRt.gameObject.AddComponent<Image>();
         fill.color = fillColor;
         fill.type = Image.Type.Filled;
@@ -261,9 +264,9 @@ public class InventoryDemoBootstrap : MonoBehaviour
 
         // Add LayoutElement so HorizontalLayoutGroup respects sizes
         var leLabel = labelGO.AddComponent<LayoutElement>();
-        leLabel.preferredWidth = 80f;
+        leLabel.preferredWidth = 64f;
         var leFill = fillRt.gameObject.AddComponent<LayoutElement>();
-        leFill.preferredWidth = 260f;
+        leFill.preferredWidth = 240f;
 
         StatusBar sb = go.AddComponent<StatusBar>();
         sb.fillImage = fill;
