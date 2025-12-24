@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 using UnityEngine.UI;
 
@@ -67,6 +68,17 @@ public class InventoryUI : MonoBehaviour
 		if (bindBackgroundToRoot && inventoryBackgroundPanel != null && rootPanel != null)
 		{
 			inventoryBackgroundPanel.SetActive(rootPanel.activeSelf);
+		}
+		// 如果配置为不创建最外层背景，确保场景中不存在残留的 InventoryBackground
+		if (!createOuterBackground)
+		{
+			var existing = GameObject.Find("InventoryBackground");
+			if (existing != null)
+			{
+				if (Application.isPlaying) Destroy(existing);
+				else DestroyImmediate(existing);
+				inventoryBackgroundPanel = null;
+			}
 		}
 	}
 
@@ -472,19 +484,13 @@ public class InventoryUI : MonoBehaviour
 		// 优先切换 inventoryBackgroundPanel（如果存在），避免只切换 child 导致 parent 背景残留造成灰色遮挡
 		if (Input.GetKeyDown(KeyCode.I))
 		{
-			// If rootPanel is child of inventoryBackgroundPanel, toggle the parent to avoid leaving background visible.
-			if (inventoryBackgroundPanel != null && rootPanel != null && rootPanel.transform.IsChildOf(inventoryBackgroundPanel.transform))
-			{
-				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
-			}
-			else if (inventoryBackgroundPanel != null && rootPanel == null)
-			{
-				inventoryBackgroundPanel.SetActive(!inventoryBackgroundPanel.activeSelf);
-			}
-			else if (rootPanel != null)
-			{
-				rootPanel.SetActive(!rootPanel.activeSelf);
-			}
+			// Toggle both panels (if exist) to keep state consistent and avoid leftover backgrounds
+			bool current = false;
+			if (inventoryBackgroundPanel != null) current = inventoryBackgroundPanel.activeSelf;
+			else if (rootPanel != null) current = rootPanel.activeSelf;
+			bool target = !current;
+			if (inventoryBackgroundPanel != null) inventoryBackgroundPanel.SetActive(target);
+			if (rootPanel != null) rootPanel.SetActive(target);
 		}
 
 		// 检测窗口尺寸变化并在变化时刷新网格与背景（简单实现）
@@ -570,6 +576,14 @@ public class InventoryUI : MonoBehaviour
 
 		EditorUtility.SetDirty(this);
 		Debug.Log($"[InventoryUI] AutoAssignDefaultSpritesEditor finished; assigned {found.Count} textures (check Inspector).");
+		// Persist changes to serialized fields and save scene/assets so assignment survives editor restart
+		AssetDatabase.SaveAssets();
+		var scene = EditorSceneManager.GetActiveScene();
+		if (scene.IsValid())
+		{
+			EditorSceneManager.MarkSceneDirty(scene);
+			EditorSceneManager.SaveScene(scene);
+		}
 	}
 #endif
 
